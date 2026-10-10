@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OUI Scout</title>
+    <link rel="stylesheet" href="/src/styles/app.css" />
+  </head>
+  <body>
+    <main class="popup" id="popup">
+      <p class="wordmark">OUI Scout</p>
+      <input
+        class="mac-input"
+        id="mac-input"
+        type="text"
+        placeholder="Paste a MAC address"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        aria-label="MAC address"
+      />
+      <div
+        class="result-banner"
+        id="result-banner"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+      <div class="format-rows" id="format-rows">
+        <div class="format-row" data-format="colon"></div>
+        <div class="format-row" data-format="plain"></div>
+        <div class="format-row" data-format="cisco-dot"></div>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

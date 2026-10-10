@@ -1,0 +1,23 @@
+/* OUI Scout popup shell geometry.
+   Design tokens (colors, typography, radii, spacing) arrive in Story 1.2. */
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  width: 360px;
+  overflow: hidden;
+}
+
+.popup {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  overflow: hidden;
+}
