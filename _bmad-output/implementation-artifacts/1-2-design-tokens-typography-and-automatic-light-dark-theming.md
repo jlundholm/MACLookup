@@ -4,7 +4,7 @@ baseline_commit: e53247a4dedfb73a75053b722ba76ebeb8c87041
 
 # Story 1.2: Design tokens, typography, and automatic light/dark theming
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -52,6 +52,15 @@ so that it looks native and needs no manual toggle.
   - [x] `npm run typecheck` passes and `npm run build` succeeds (CSS change must not break the CRXJS build).
   - [x] `grep`-confirm each DESIGN hex value appears in `app.css`.
   - [x] Manually: rebuild, reload the unpacked `dist` in Chrome, and toggle the OS light/dark theme while the popup is open — the popup flips instantly with no reload.
+
+### Review Findings
+
+_Code review 2026-10-10 (target `e53247a..c2ecd67`; layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor). Acceptance Auditor: **zero AC violations** — all 27 hex values, radii, spacing, and typography roles match DESIGN.md verbatim; AC5 contrast all ≥4.5:1._
+
+- [x] [Review][Defer] MAC input foreground + box chrome not themed (no `color`, no `:focus-visible`) [src/styles/app.css:130-141] — deferred to Story 1.3 (UX-DR3): `.mac-input` sets no `color`, so typed text falls back to the UA `fieldtext` value (theme-appropriate via `color-scheme`, but not the `--color-text` token); `--color-focus-ring` is defined but unused. The input component story owns foreground/border/radius/focus.
+- [x] [Review][Defer] Typographic role hooks lack layout guards [src/styles/app.css:144-169] — deferred to Story 1.5 (UX-DR6): `.readout`/`.field-label`/`.state-label`/`.prefix` set only font properties — no `margin: 0` reset (UA margins on `<p>/<h*>` would break the `.popup` `gap` rhythm) and no `min-width: 0`/`overflow-wrap` to stop an unbroken readout from overflowing the 360px shell.
+- [x] [Review][Defer] High-contrast (`forced-colors`) and zoom/fixed-px text scaling not handled [src/styles/app.css:66-87] — deferred to Story 1.7 (accessibility floor): no `@media (forced-colors: active)` path (status triads collapse to system colors; mitigated because the required `state-label` text also conveys state), and fixed px sizes under `overflow: hidden` can clip at large font/zoom settings.
+- [x] [Review][Defer] Popup-shell shadow/radius ineffective in a real extension popup [src/styles/app.css:106-118] — deferred (cosmetic): `.popup` is the same width as `body` and clipped by `overflow: hidden`, so the `0 1px 3px` shell shadow and corner radius don't render against the popup window edge (they read correctly only in the mockup-on-a-page context). Revisit only if the shell frame matters.
 
 ## Dev Notes
 

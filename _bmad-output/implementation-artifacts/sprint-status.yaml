@@ -51,8 +51,8 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   # Epic 1: Convert a MAC into every format you need — offline and native
   epic-1: in-progress
-  1-1-scaffold-the-extension-zero-permission-manifest-and-popup-shell: review
-  1-2-design-tokens-typography-and-automatic-light-dark-theming: review
+  1-1-scaffold-the-extension-zero-permission-manifest-and-popup-shell: done
+  1-2-design-tokens-typography-and-automatic-light-dark-theming: done
   1-3-paste-and-normalize-any-common-mac-form: backlog
   1-4-reject-invalid-input-clearly: backlog
   1-5-display-the-three-working-formats: backlog

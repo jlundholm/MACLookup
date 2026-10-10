@@ -4,7 +4,7 @@ baseline_commit: 0d06269b0d41bf6a7d8cd7b7edf49bb5da0ce4a3
 
 # Story 1.1: Scaffold the extension, zero-permission manifest, and popup shell
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -52,6 +52,19 @@ So that I have a loadable foundation for every later story.
   - [x] Run `npm run typecheck` — must pass.
   - [x] Run `npm run build` — must emit `dist/` containing `manifest.json`, `index.html`, `icons/`, and the bundled popup assets.
   - [x] Run `npm run dev` and confirm Chrome loads the unpacked extension from the CRXJS dev output and the toolbar icon opens the 360px popup with no console errors.
+
+### Review Findings
+
+_Code review 2026-10-10 (target `0d06269..e53247a`; layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor)._
+
+- [x] [Review][Defer] Enforce the offline/no-network posture with a restrictive MV3 CSP [manifest.json:1-21] — deferred to Story 1.8 (privacy guard suite). Reason: single owner in the privacy guard suite; keep 1.1 a pure scaffold. (MV3 default CSP does not restrict `connect-src`, so a future `fetch()` is not mechanically blocked today; note CRXJS dev mode needs a dev-server connect, so any CSP must keep `npm run dev` working.)
+- [x] [Review][Patch] `data-format="cisco-dot"` diverges from the architecture contract key `cisco` [index.html:33] — Architecture pins the format set as `{ colon, plain, cisco }` and the copy handler is "keyed by `data-format` (`colon|plain|cisco`)" (architecture.md:305,318). The row used `cisco-dot`, so Story 1.5's delegated copy handler would not match it. **Fixed:** `data-format` set to `cisco` (the "Cisco-dot" string is the display label only).
+- [x] [Review][Defer] `hidden` on the `aria-live="polite"` banner can suppress announcements [index.html:23-29] — deferred, owned by Story 1.7 (accessibility floor).
+- [x] [Review][Defer] Long readout/vendor text has no wrap/ellipsis at 360px under `overflow: hidden` [src/styles/app.css:5] — deferred to Story 1.5 (format rows) / Epic 2 (vendor).
+- [x] [Review][Defer] No automated guard that the zero-permission/offline posture stays intact [manifest.json:1-21] — deferred, explicitly the scope of Story 1.8 (privacy guard suite).
+- [x] [Review][Defer] `lib` omits `DOM.Iterable` [tsconfig.json:4] — deferred, latent future typecheck issue.
+- [x] [Review][Defer] No Node `engines`/`.nvmrc` pin for the Vite 8 toolchain [package.json:1-19] — deferred, low-risk DX hardening.
+- [x] [Review][Defer] Dev server port not pinned for the CRXJS dev origin [vite.config.ts:5-7] — deferred, dev-only edge (port contention on 5173).
 
 ## Dev Notes
 
