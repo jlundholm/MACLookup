@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { parseMac } from './parse';
 
 const CANONICAL = 'AABBCCDDEEFF';
-const CANONICAL_SHAPE = /^[0-9A-F]{12}$/;
 
 describe('parseMac — accepted forms reduce to canonical', () => {
   const valid: Array<[label: string, input: string]> = [
@@ -17,14 +16,16 @@ describe('parseMac — accepted forms reduce to canonical', () => {
     ['leading/trailing spaces', '  AA:BB:CC:DD:EE:FF  '],
     ['surrounding newlines', '\nAABBCCDDEEFF\n'],
     ['surrounding tabs', '\tAA BB CC DD EE FF\t'],
+    ['carriage return', '\rAABBCCDDEEFF\r'],
+    ['CRLF (Windows / table export)', '\r\nAA:BB:CC:DD:EE:FF\r\n'],
+    ['vertical tab', '\vAABBCCDDEEFF\v'],
+    ['form feed', '\fAABBCCDDEEFF\f'],
     ['mixed separators', 'AA:BB-CC.DD EE:FF'],
     ['separators anywhere', '::AABBCCDDEEFF'],
   ];
 
   it.each(valid)('%s: %j', (_label, input) => {
-    const result = parseMac(input);
-    expect(result).toEqual({ ok: true, canonical: CANONICAL });
-    if (result.ok) expect(result.canonical).toMatch(CANONICAL_SHAPE);
+    expect(parseMac(input)).toEqual({ ok: true, canonical: CANONICAL });
   });
 });
 
@@ -64,9 +65,9 @@ describe('parseMac — purity and contract', () => {
     }
   });
 
-  it('does not mutate or retain the input', () => {
-    const input = 'aa:bb:cc:dd:ee:ff';
-    parseMac(input);
-    expect(input).toBe('aa:bb:cc:dd:ee:ff');
+  it('retains no state across calls', () => {
+    expect(parseMac('AA:BB:CC:DD:EE:FF')).toEqual({ ok: true, canonical: CANONICAL });
+    expect(parseMac('garbage')).toEqual({ ok: false, reason: 'invalid' });
+    expect(parseMac('aa:bb:cc:dd:ee:ff')).toEqual({ ok: true, canonical: CANONICAL });
   });
 });

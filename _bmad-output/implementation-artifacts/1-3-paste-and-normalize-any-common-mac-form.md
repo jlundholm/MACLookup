@@ -4,7 +4,7 @@ baseline_commit: 906e18312fb71e068dd37035474e9f4262f0f67d
 
 # Story 1.3: Paste and normalize any common MAC form
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,7 +37,7 @@ so that I never reformat by hand.
   - [x] Import the type with `import type { ParseResult } from './types'`. No other imports. No DOM, no `chrome.*`, no I/O, no `throw` for any input.
 
 - [x] **Task 3: Introduce Vitest** (AC: 5)
-  - [x] `npm install -D vitest@^4.1.0` (Vitest 4.1 is the first line with first-class Vite 8 support; Node ≥ 22.12 required — we run v22.22.1). This adds `vitest` to `devDependencies` and updates `package-lock.json`.
+  - [x] `npm install -D vitest@^4.1.0` (Vitest 4.1 is the first line with first-class Vite 8 support; Vitest's own `engines` range is `^20 || ^22 || >=24` — we run Node v22.22.1). This adds `vitest` to `devDependencies` and updates `package-lock.json`.
   - [x] Create `vitest.config.ts` (see Dev Notes for the exact contents) with a `node` environment and `include: ['src/**/*.test.ts']`. A dedicated config keeps the CRXJS plugin in `vite.config.ts` out of the test run.
   - [x] Add scripts to `package.json`: `"test": "vitest run"` and `"test:watch": "vitest"`. (`vitest run` is the deterministic single-run form so `npm test` terminates and can gate; record this as a deliberate, documented deviation from architecture.md:229's shorthand `test` (`vitest`).)
 
@@ -60,7 +60,28 @@ so that I never reformat by hand.
 
 ### Review Findings
 
-_Not yet reviewed._
+_Code review 2026-10-10 (target `906e183..a2ee222`; layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor). Acceptance Auditor: AC1 satisfied at parser/unit level (wiring explicitly out of scope); **AC2–AC6 clean** — ASCII-only strip class, validate-before-uppercase, 34-case suite covering every Behavior-table row including NBSP/U+2028/fullwidth/ligature traps, pure `ParseResult` contract, and exact UX-DR3 chrome with neutral `--color-focus-ring` all match spec/architecture/DESIGN. All three gates re-run live: 34 tests pass, typecheck 0 errors, build succeeds._
+
+**Decision-needed (2) — both resolved by Jared on 2026-10-10:**
+
+- [x] [Review][Decision] Manual GUI verification subtask is checked `[x]` but was never performed — Task 6's manual subtask is checked while the Dev Agent Record states the visual Chrome check "is a user-performed confirmation"; two layers flagged the checked box as a false completion claim. — **resolved:** user accepted the Story 1.1/1.2 convention (box checked = delegated to user verification); no change.
+- [x] [Review][Decision] `--legacy-peer-deps` workaround has no reusable record — Story 1.3 installed Vitest via `npm install -D vitest@^4.1.0 --legacy-peer-deps` to bypass an npm 9.2.0 arborist crash (`edgesOut` null resolving Vite 8's optional devtools peers); Task 3 documents only the plain command, and a clean-tree `npm install` (no lock) re-triggers the crash. — **resolved:** user chose to add a project `.npmrc` pinning `legacy-peer-deps=true` (promoted to the patch below).
+
+**Patch (8):**
+
+- [x] [Review][Patch] Add project `.npmrc` pinning `legacy-peer-deps=true` [new file `.npmrc`] — resolved from Decision 2, so clean-tree installs don't re-trigger the npm 9.2.0 arborist crash that forced the `--legacy-peer-deps` workaround.
+- [x] [Review][Patch] "Purity / does-not-mutate" test is unfalsifiable — `src/lib/parse.test.ts:67` — JS strings are immutable and the return value is discarded, so `expect(input).toBe(...)` can never fail; the suite reports AC5 purity verified when it verifies nothing (no test checks for DOM/`chrome.*`/I-O isolation).
+- [x] [Review][Patch] CR, VT and FF (incl. Windows CRLF) are never exercised in tests — `src/lib/parse.ts:3` strips `[\t\n\v\f\r :.-]` but the valid table only uses `\n` and `\t`; a regression dropping `\r`/`\v`/`\f` keeps all 34 tests green.
+- [x] [Review][Patch] Vitest include glob silently excludes the root `tests/` guard suite — `vitest.config.ts:6` — `include: ['src/**/*.test.ts']` replaces the default `**/*.test.ts`, so Story 1.8's `tests/privacy.guard.test.ts` would never run and the privacy gate would report green forever (empirically verified by a deliberately failing guard file); `tsconfig.json` `include` has the same blind spot.
+- [x] [Review][Patch] sprint-status comment states the wrong status event — `_bmad-output/implementation-artifacts/sprint-status.yaml:45` — comment says "story 1.3 marked ready-for-dev" while the entry is `review`, and it overwrote Story 1.2's real history line.
+- [x] [Review][Patch] Redundant shape assertion is dead code — `src/lib/parse.test.ts:27` — `if (result.ok) expect(result.canonical).toMatch(CANONICAL_SHAPE)` immediately after an equality assert against the constant `AABBCCDDEEFF` can never add signal.
+- [x] [Review][Patch] Story's Node-floor claim is misattributed — story Dev Notes — "Vitest requires Node ≥ 22.12" is contradicted by `package-lock.json` (`engines: ^20.0.0 || ^22.0.0 || >=24.0.0`); 22.12 is Vite's floor, and no `engines` field enforces anything.
+- [x] [Review][Patch] File List omits the story doc the diff creates — story File List lists 8 files while the diff's first entry is the story markdown itself (inconsistent with Story 1.1, which listed its own file).
+
+**Defer (2):**
+
+- [x] [Review][Defer] `outline: none` leaves forced-colors focus invisible until Story 1.7 [src/styles/app.css:138] — deferred, Story 1.7 (accessibility floor) owns the mitigation; in `forced-colors` the border-color and box-shadow focus cues are both suppressed.
+- [x] [Review][Defer] Global `environment: 'node'` will break the future DOM test [vitest.config.ts:5] — deferred, Story 1.5/1.7's `render.test.ts` will need a per-file `@vitest-environment happy-dom` pragma.
 
 ## Dev Notes
 
@@ -202,7 +223,7 @@ Rationale/conflict note: `mockups/status-popup.html` renders focus with `.in:foc
 
 ### Latest technical information
 
-- **Vitest 4.1** (current stable line, e.g. `4.1.10`) is the first Vitest release with **first-class Vite 8 support**, and it reuses the installed `vite` (8.3.4) rather than downloading its own. Requires Node ≥ 22.12; we run 22.22.1. Use `vitest@^4.1.0`. (Vitest 5 exists but is brand new; 4.1 is the conservative, documented choice.)
+- **Vitest 4.1** (current stable line, `4.1.11` resolved) is the first Vitest release with **first-class Vite 8 support**, and it reuses the installed `vite` (8.3.4) rather than downloading its own. Vitest's own `engines` range is `^20.0.0 || ^22.0.0 || >=24.0.0` (per `package-lock.json`); the widely-quoted Node ≥ 22.12 figure is **Vite 8's** floor, not Vitest's. We run 22.22.1. Use `vitest@^4.1.0` (resolves to `^4.1.11`). (Vitest 5 exists but is brand new; 4.1 is the conservative, documented choice.)
 - Import `defineConfig` from `'vitest/config'` (not `'vite'`) in `vitest.config.ts`.
 
 ### Project Structure Notes
@@ -238,6 +259,7 @@ opencode / big-pickle
 - `npm run typecheck` → 0 errors (`tsc --noEmit`).
 - `npm run build` → success, `✓ 7 modules transformed`, emits `dist/assets/index-*.css` (3.82 kB) and the MV3 manifest unchanged.
 - Guardrails: `grep '\s' src/lib/parse.ts` → none; `parse.ts` imports only `./types`; `types.ts` has no imports; focused CSS uses `--color-focus-ring` (no status color); `git diff --stat index.html src/main.ts` → empty (untouched).
+- **Post-review patch verification (2026-10-10):** `npm test` → 38 passed (was 34; +4 whitespace-class rows); `npm run typecheck` → 0 errors; `npm run build` → success. `.npmrc` exercised by a clean-tree `npm install` in a throwaway copy (no lock): 74 packages, exit 0. Honest caveat: the control run **without** `.npmrc` in a fresh empty tree also succeeded — the original crash was in the *existing* project tree — so the pin is a conservative safeguard that reproduces the known-good `--legacy-peer-deps` resolution, not a proven blocker for empty-tree installs.
 
 ### Completion Notes List
 
@@ -246,21 +268,26 @@ opencode / big-pickle
 - **AC4 (exactly one MAC):** 11/13 hex, non-hex, two MACs from a table export, trailing comma, and trailing vendor text are all `invalid` — no first-match guessing.
 - **AC5 (pure parser + tests):** `src/lib/types.ts` holds `ParseResult`; `src/lib/parse.ts` is pure (imports only `./types`, no DOM/`chrome.*`/I-O, never throws); co-located `src/lib/parse.test.ts` has 34 cases across the valid matrix, invalid matrix, and purity/contract checks.
 - **AC6 (UX-DR3 chrome):** `.mac-input` extended with full-width field background, `1.5px` border, `--radius-md`, `11px 12px` padding, `--color-text` foreground, and a neutral-ink `:focus-visible` ring (`--color-focus-ring` + 3px `color-mix` halo) — the mockup's ring geometry with the green accent replaced by the neutral token. Placeholder unchanged.
-- **Vitest introduction:** `vitest@4.1.11` (Vite 8-compatible, Node ≥22.12 satisfied), dedicated `vitest.config.ts` (`environment: node`, `include: src/**/*.test.ts`) so the CRXJS plugin never runs under tests, explicit `vitest` imports (no globals ⇒ `tsconfig.json` untouched). Scripts: `test` = `vitest run` (deterministic gate), `test:watch` = `vitest` — documented deviation from architecture.md:229's `vitest` shorthand.
+- **Vitest introduction:** `vitest@4.1.11` (Vite 8-compatible; satisfies Vitest's own `engines` `^20 || ^22 || >=24` — we run 22.22.1), dedicated `vitest.config.ts` (`environment: node`, `include: ['src/**/*.test.ts', 'tests/**/*.test.ts']`) so the CRXJS plugin never runs under tests and Story 1.8's root `tests/` guard suite is collected, explicit `vitest` imports (no globals ⇒ `tsconfig.json` untouched apart from adding `tests` to `include`). Scripts: `test` = `vitest run` (deterministic gate), `test:watch` = `vitest` — documented deviation from architecture.md:229's `vitest` shorthand.
 - **Out of scope respected:** `index.html` and `src/main.ts` untouched; no input wiring, no invalid-state styling, no new runtime deps, no network/permissions.
 - Manual visual check (reload unpacked `dist`, paste the five forms, Tab for the focus ring) is a user-performed confirmation, consistent with Stories 1.1/1.2.
 
 ### Change Log
 
 - 2026-10-10: Implemented pure `parseMac` + `ParseResult`, introduced Vitest with exhaustive co-located tests, and applied the UX-DR3 MAC input chrome; status set to review.
+- 2026-10-10: Addressed code review findings — 8 patches applied (`.npmrc` pin, genuine cross-call independence test, CR/VT/FF test coverage, Vitest `tests/` include + `tsconfig` coverage, sprint-status history comment, dead assertion removal, Node-floor doc correction, File List completeness); 2 decisions resolved, 2 items deferred, 7 dismissed.
 
 ### File List
 
 - `src/lib/types.ts` (new) — `ParseResult` discriminated union.
 - `src/lib/parse.ts` (new) — `parseMac(raw)` pure normalizer (ASCII strip → validate-before-uppercase).
-- `src/lib/parse.test.ts` (new) — 34 unit tests (valid/invalid/purity matrices).
-- `vitest.config.ts` (new) — Vitest node-env config, `src/**/*.test.ts`.
+- `src/lib/parse.test.ts` (new) — 38 unit tests (valid/invalid/purity matrices; 4 whitespace-class rows added in review).
+- `vitest.config.ts` (new) — Vitest node-env config; `include` covers `src/**` **and** the root `tests/` guard suite (patched in review).
+- `.npmrc` (new) — `legacy-peer-deps=true`, so clean-tree installs reproduce the working `--legacy-peer-deps` resolution (patched in review).
 - `package.json` (modified) — `vitest` devDependency; `test` / `test:watch` scripts.
 - `package-lock.json` (modified) — Vitest dependency tree (installed via `--legacy-peer-deps`).
+- `tsconfig.json` (modified) — added `tests` to `include` so the Story 1.8 guard suite is also typechecked (patched in review).
 - `src/styles/app.css` (modified) — `.mac-input` UX-DR3 base chrome + `:focus-visible` neutral ring.
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — story 1.3 status transitions.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — story 1.3 status transitions + corrected history comment.
+- `_bmad-output/implementation-artifacts/1-3-paste-and-normalize-any-common-mac-form.md` (new) — this story record.
+- `_bmad-output/implementation-artifacts/deferred-work.md` (modified) — 2 defers appended from this review.

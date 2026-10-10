@@ -16,3 +16,9 @@
 - Typographic role hooks (`.readout`/`.field-label`/`.state-label`/`.prefix`) lack a `margin: 0` reset and `min-width: 0`/`overflow-wrap` guards. Deferred to Story 1.5 (UX-DR6) where the row components render them.
 - High-contrast `forced-colors` mode and zoom/fixed-px text scaling are unhandled. Deferred to Story 1.7 (accessibility floor); state is also carried by the `state-label` text, so color is reinforcement.
 - Popup-shell shadow and corner radius are clipped/ineffective in a real extension popup (`.popup` width == `body` width, `overflow: hidden`). Cosmetic; revisit only if the shell frame matters.
+
+## Deferred from: code review of story 1-3 (2026-10-10)
+
+- `outline: none` on `.mac-input` (`src/styles/app.css:138`) leaves keyboard focus invisible under Windows `forced-colors`: author outlines are suppressed and both the `box-shadow` halo and the `border-color` focus cue are forced to system colors. Story 1.3's scope boundary explicitly defers `forced-colors` to Story 1.7 (accessibility floor), which should add the `@media (forced-colors: active)` focus path.
+- Vitest's global `environment: 'node'` (`vitest.config.ts:5`) will break the architecture's future `src/ui/render.test.ts` (DOM assertions / happy-dom) under the `src/**/*.test.ts` include. The future DOM-test story should add a per-file `// @vitest-environment happy-dom` pragma (or `environmentMatchGlobs`) rather than change the node default.
+- `tsconfig.json` `include` (`["src", "vite.config.ts"]`) does not cover a root `tests/` directory, so Story 1.8's `tests/privacy.guard.test.ts` would be skipped by `npm run typecheck` as well as by Vitest. Note: the Vitest `include` side of this is a **patch** (fixed in this review); the `tsconfig` side rides along with it.
