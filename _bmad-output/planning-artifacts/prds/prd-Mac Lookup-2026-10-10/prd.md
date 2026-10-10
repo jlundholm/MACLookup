@@ -1,6 +1,6 @@
 ---
 title: OUI Scout — Product Requirements Document
-status: draft
+status: final
 created: 2026-10-10
 updated: 2026-10-10
 ---
@@ -11,7 +11,7 @@ updated: 2026-10-10
 
 ## 0. Document Purpose
 
-This PRD defines v1 of OUI Scout for its builder and for the downstream workflows (UX, architecture, stories) that consume it. It builds on the product brief (`briefs/brief-Mac Lookup-2026-10-09/brief.md`, status: ready); it does not restate the competitive or data research, which lives in that brief's addendum and in this document's `addendum.md`. Vocabulary is Glossary-anchored, features are grouped with globally numbered FRs, and inferences carry inline `[ASSUMPTION]` tags indexed in §12.
+This PRD defines v1 of OUI Scout for its builder and the downstream workflows (UX, architecture, stories) that consume it. It builds on the product brief (`briefs/brief-Mac Lookup-2026-10-09/brief.md`); competitive and data research lives in that brief's addendum and in this document's `addendum.md`, not here. Vocabulary is Glossary-anchored; FRs are globally numbered; inferences carry inline `[ASSUMPTION]` tags indexed in §12.
 
 ## 1. Vision
 
@@ -22,6 +22,8 @@ It exists because the alternatives are each incomplete: converter-only tools ski
 The bet is simple: a small, fast, private, native-feeling utility is enough to beat heavier and leakier alternatives. The edge is privacy, speed, and polish — not a technical moat.
 
 ## 2. Target User
+
+The product's intended audience is network engineers, IT/helpdesk, and support staff who read MACs from spreadsheets, switch and router CLIs, DHCP leases, and asset inventories; secondarily, homelabbers and security practitioners triaging unknown devices. In v1 the primary user is the builder, who is one of those engineers — so the jobs below are written from that seat.
 
 ### 2.1 Jobs To Be Done
 
@@ -38,7 +40,7 @@ The bet is simple: a small, fast, private, native-feeling utility is enough to b
 
 ### 2.3 Key User Journeys
 
-- **UJ-1. Jared pastes a MAC from a switch CLI and gets everything at once.** Jared, a network engineer, copies a MAC out of `show mac address-table`, opens the OUI Scout popup, and pastes it. The popup instantly shows colon, plain, and Cisco-dot forms (all uppercase) plus the Vendor name, and offers a one-click copy on each format. He clicks the Cisco-dot copy, pastes it into the switch config, and closes the popup. All of it offline.
+- **UJ-1. Jared pastes a MAC from a switch CLI and gets everything at once.** Jared, a network engineer, copies a MAC out of `show mac address-table`, opens the OUI Scout popup, and pastes it. The popup instantly shows colon, plain, and Cisco-dot forms (all uppercase) plus the Vendor name, and offers a one-click copy on each format. He clicks the Cisco-dot copy, pastes it into the switch config, and closes the popup. All of it happens offline.
   - **Edge case:** the clipboard holds a screenshot or prose, not a MAC — see UJ-2.
 
 - **UJ-2. Jared pastes junk and gets told, not misled.** He pastes text that isn't a valid MAC. The popup shows a short inline error and clears the outputs and Vendor — no partial or stale conversion left on screen. He fixes the paste and the results appear.
@@ -62,7 +64,7 @@ The bet is simple: a small, fast, private, native-feeling utility is enough to b
 
 ### 4.1 MAC Input & Normalization
 
-**Description:** A single paste field accepts a MAC in any common form, strips separators and whitespace, and normalizes it to the Canonical value. Input is case-insensitive; the Canonical value and all outputs are uppercase. Realizes UJ-1. Invalid input is handled distinctly (FR-2). Separator handling is specified in the addendum.
+**Description:** A single paste field accepts a MAC in any common form, strips separators and whitespace, and normalizes it to the Canonical value. Input is case-insensitive; the Canonical value and all outputs are uppercase. [ASSUMPTION: uppercase output, case-insensitive input.] Realizes UJ-1. Invalid input is handled distinctly (FR-2). Separator handling is specified in the addendum.
 
 **Functional Requirements:**
 
@@ -74,13 +76,16 @@ A user can paste a MAC in colon, hyphen, Cisco-dot, space-grouped, or bare-hex f
 - `aa:bb:cc:dd:ee:ff`, `AA-BB-CC-DD-EE-FF`, `aabb.ccdd.eeff`, `AA BB CC DD EE FF`, and `AABBCCDDEEFF` all produce identical output.
 - Leading/trailing whitespace and newlines are trimmed.
 - Hex letters are accepted in either case; the Canonical value is uppercase.
+- Only ASCII separators (`:`, `-`, `.`) and ASCII whitespace are stripped; any other character (including non-ASCII separators or homoglyphs) makes the input invalid (FR-2).
+- A paste that does not reduce to exactly one 12-hex-digit value — e.g., several MACs copied from a table export — is invalid in v1. [ASSUMPTION: multi-MAC pastes are rejected rather than resolved to the first match; first-match extraction is deferred to v2.]
 
 #### FR-2: Reject invalid input clearly
 
 A user pasting text that is not a valid MAC sees an inline error and no results. Realizes UJ-2.
 
 **Consequences (testable):**
-- Input that is not exactly 12 hex digits after separator/whitespace stripping produces a short inline message (e.g., "Not a valid MAC address").
+- An empty field is a neutral resting state: it shows the prompt/placeholder with no error.
+- Non-empty input that is not exactly 12 hex digits after separator/whitespace stripping produces a short inline message (e.g., "Not a valid MAC address").
 - All output fields and the Vendor result are cleared or disabled while input is invalid — no stale or partial result remains.
 - The field remains editable; correcting the input immediately restores results, with no reload.
 
@@ -107,11 +112,12 @@ A user can copy any single format to the clipboard with one click. Realizes UJ-1
 **Consequences (testable):**
 - Activating a format's copy control places exactly that format string on the clipboard.
 - A brief confirmation is shown after copying and then clears. [ASSUMPTION: ~1.5 s confirmation, e.g., "Copied".]
+- If the clipboard write is rejected (browser denies the call), the popup shows a failure state instead of the confirmation — it never reports "Copied" when the copy did not occur.
 - Copying requires no declared permission (performed under a user gesture).
 
 ### 4.3 Offline Vendor Lookup
 
-**Description:** On a valid MAC, the popup resolves the Vendor from the OUI prefix using the Bundled OUI database (MA-L, MA-M, MA-S), entirely offline. An unmatched prefix produces a distinct "no match" state rather than a blank. Realizes UJ-1, UJ-2.
+**Description:** On a valid MAC, the popup resolves the Vendor from the OUI prefix using the Bundled OUI database (MA-L, MA-M, MA-S), entirely offline. An unmatched prefix produces a distinct "no-match" state rather than a blank. Realizes UJ-1, UJ-2.
 
 **Functional Requirements:**
 
@@ -122,7 +128,8 @@ A user can see the Vendor for a valid MAC without any network request. Realizes 
 **Consequences (testable):**
 - For a MAC whose prefix exists in the OUI database, the Vendor name is displayed, together with the Prefix used.
 - The lookup succeeds with the device offline and produces zero outbound network requests.
-- Both /24, /28, and /36 prefixes resolve (MA-L, MA-M, MA-S coverage).
+- The /24, /28, and /36 prefixes all resolve (MA-L, MA-M, MA-S coverage).
+- When registries overlap for a MAC, the longest matching Prefix wins (MA-S /36 > MA-M /28 > MA-L /24), so the Vendor returned is the most specific assignment.
 
 #### FR-6: Show a clear no-match state
 
@@ -140,7 +147,7 @@ A user pasting a valid MAC whose prefix is absent from the database sees an expl
 
 #### FR-7: Follow the light/dark preference automatically
 
-The popup renders in light or dark styling to match the current system preference, with no user action. Realizes UJ-1.
+The popup renders in light or dark styling to match the current system preference, with no user action.
 
 **Consequences (testable):**
 - With the OS in dark mode, the popup renders dark; in light mode, light.
@@ -155,7 +162,7 @@ The popup renders in light or dark styling to match the current system preferenc
 
 #### FR-8: Publish with a minimal-permission, no-collection posture
 
-The extension can be published with no data-collection disclosure and no meaningful install-time permission warnings. Realizes UJ-1.
+The extension can be published with no data collection and no meaningful install-time permission warnings.
 
 **Consequences (testable):**
 - The manifest declares no host permissions and no runtime permission beyond what a user-gesture clipboard write requires.
@@ -169,10 +176,8 @@ The extension can be published with no data-collection disclosure and no meaning
 - **Not a network toolkit.** No subnet math, IP tooling, packet features, or device scanning.
 - **Not a service.** No account, no server, no API, no sync.
 - **Not connected.** No telemetry, analytics, crash reporting, or "phone home" of any kind in v1.
-- **Not always-current.** No runtime registry update or remote fallback; the database is a build-time snapshot.
-- **Not multi-browser.** Chrome only in v1.
-- **Not multi-format-extended.** No EUI-64, decimal, or binary in v1.
-- **Not a Windows-output tool.** Hyphen/Windows form is not an *output*.
+
+Feature-level deferrals — extra formats, other browsers, a manual theme toggle, runtime registry updates, and publication — are listed in §6.2.
 
 ## 6. MVP Scope
 
@@ -223,7 +228,7 @@ The extension can be published with no data-collection disclosure and no meaning
 - **Correctness:** Deterministic, verified conversion across all accepted forms and all bundled registries.
 - **Package size:** Bundled OUI database compressed to ≤ ~2 MB; total package ≤ ~3 MB, reviewed against store norms. [ASSUMPTION: ~3 MB budget.]
 - **Platform:** Chrome desktop, Manifest V3; popup within the 800×600 limit.
-- **Accessibility:** All controls keyboard-reachable; copy confirmations exposed to assistive tech. [ASSUMPTION.]
+- **Accessibility:** Every interactive control is reachable by Tab with a visible focus state, and both themes meet WCAG AA contrast for text; copy confirmations are exposed to assistive tech. [ASSUMPTION.]
 - **Maintainability:** Database refreshed via a repeatable build step; no runtime update path.
 
 ## 9. Constraints and Guardrails
@@ -243,7 +248,7 @@ Native, unobtrusive, fast. The popup should look like it belongs in Chrome — s
 - **OQ-1:** IEEE redistribution license — resolve before publishing. Options: adopt an openly licensed dataset, seek IEEE permission, or accept the risk with clear attribution. *(Launch-blocker if published; irrelevant for personal use.)*
 - **OQ-2:** Refresh cadence for the bundled database, and who runs the build step.
 - **OQ-3:** Whether to ship vendor-name-only indexes (smaller) versus full registry data to reduce package size.
-- **OQ-4:** Trademark/name clearance for "OUI Scout" if the extension is ever commercialized (low risk while free).
+- **OQ-4:** Trademark/name clearance for "OUI Scout" if the extension is ever commercialized. Low risk while free (no existing "OUI Scout" product found), but "Scout" alone is a crowded, contested term with active USPTO activity; formal clearance only if commercialized.
 - **OQ-5:** Whether a non-IEEE data source should supplement coverage.
 
 ## 12. Assumptions Index
@@ -253,6 +258,7 @@ Native, unobtrusive, fast. The popup should look like it belongs in Chrome — s
 - §8 — package size budget: database ≤ ~2 MB compressed, total ≤ ~3 MB.
 - §8 — accessibility expectation: all controls keyboard-reachable; copy confirmations announced.
 - §4.1 — outputs are uppercase; input is case-insensitive.
+- §4.1 / FR-1 — multi-MAC pastes are rejected in v1; first-match extraction deferred to v2.
 - §6.2 — EUI-64/decimal/binary, Firefox/Edge, and a manual theme toggle deferred to v2.
 - §4.5 / §6.2 — Chrome Web Store readiness is conditional on a publish decision.
 - §10 — accent approximates Chrome blue; no manual theme control.
