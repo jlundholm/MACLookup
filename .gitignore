@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────
+# Dependencies, caches, build output
+# ─────────────────────────────────────────────────────────────────
+**/node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.eslintcache
+coverage/
+htmlcov/
+dist/
+build/
+*.whl
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# ─────────────────────────────────────────────────────────────────
+# OS and editor files
+# ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────────────────────────
+# AI assistant tools and BMad installs: per-machine, never committed
+# (recreate with: npx bmad-method install / npx skills add bmad-code-org/BMAD-METHOD)
+# NOTE: _bmad-output is intentionally NOT ignored — planning artifacts are tracked.
+# ─────────────────────────────────────────────────────────────────
+.agent
+.agents
+.agentvibes
+.ai/
+.analysis/
+.augment
+.claude
+.clinerules
+.codebuddy
+.codex
+.crush
+.cursor
+.gemini
+.github/agents
+.github/chatmodes
+.iflow
+.junie
+.kilocodemodes
+.kiro
+.mcp.json
+.opencode
+.qwen
+.roo
+.rovodev
+.serena/
+.trae
+.windsurf
+CLAUDE.local.md
+_bmad
+skills-lock.json
+.memlog.md
