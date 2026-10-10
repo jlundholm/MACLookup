@@ -4,7 +4,7 @@ baseline_commit: 906e18312fb71e068dd37035474e9f4262f0f67d
 
 # Story 1.3: Paste and normalize any common MAC form
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,38 +25,38 @@ so that I never reformat by hand.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Define the shared parse type** (AC: 5)
-  - [ ] Create `src/lib/types.ts` exporting exactly one type for now: `ParseResult = { ok: true; canonical: string } | { ok: false; reason: 'invalid' }` (verbatim from architecture.md:303).
-  - [ ] Do **not** add `LookupResult` / `Formats` / `MacStatus` / `PopupState` yet — those arrive with the format (1.5), lookup (2.2), and state stories. `types.ts` is the one place later stories extend.
+- [x] **Task 1: Define the shared parse type** (AC: 5)
+  - [x] Create `src/lib/types.ts` exporting exactly one type for now: `ParseResult = { ok: true; canonical: string } | { ok: false; reason: 'invalid' }` (verbatim from architecture.md:303).
+  - [x] Do **not** add `LookupResult` / `Formats` / `MacStatus` / `PopupState` yet — those arrive with the format (1.5), lookup (2.2), and state stories. `types.ts` is the one place later stories extend.
 
-- [ ] **Task 2: Implement the pure normalizer** (AC: 1, 2, 3, 4, 5)
-  - [ ] Create `src/lib/parse.ts` exporting `parseMac(raw: string): ParseResult`.
-  - [ ] Strip ASCII whitespace and separators with `raw.replace(/[\t\n\v\f\r :.-]/g, '')`. Use this exact ASCII class — **never `\s`** (see Critical guardrails).
-  - [ ] Validate the stripped (still un-uppercased) string against `/^[0-9A-Fa-f]{12}$/`; on failure return `{ ok: false, reason: 'invalid' }`.
-  - [ ] Only after validation, uppercase: return `{ ok: true, canonical: stripped.toUpperCase() }`.
-  - [ ] Import the type with `import type { ParseResult } from './types'`. No other imports. No DOM, no `chrome.*`, no I/O, no `throw` for any input.
+- [x] **Task 2: Implement the pure normalizer** (AC: 1, 2, 3, 4, 5)
+  - [x] Create `src/lib/parse.ts` exporting `parseMac(raw: string): ParseResult`.
+  - [x] Strip ASCII whitespace and separators with `raw.replace(/[\t\n\v\f\r :.-]/g, '')`. Use this exact ASCII class — **never `\s`** (see Critical guardrails).
+  - [x] Validate the stripped (still un-uppercased) string against `/^[0-9A-Fa-f]{12}$/`; on failure return `{ ok: false, reason: 'invalid' }`.
+  - [x] Only after validation, uppercase: return `{ ok: true, canonical: stripped.toUpperCase() }`.
+  - [x] Import the type with `import type { ParseResult } from './types'`. No other imports. No DOM, no `chrome.*`, no I/O, no `throw` for any input.
 
-- [ ] **Task 3: Introduce Vitest** (AC: 5)
-  - [ ] `npm install -D vitest@^4.1.0` (Vitest 4.1 is the first line with first-class Vite 8 support; Node ≥ 22.12 required — we run v22.22.1). This adds `vitest` to `devDependencies` and updates `package-lock.json`.
-  - [ ] Create `vitest.config.ts` (see Dev Notes for the exact contents) with a `node` environment and `include: ['src/**/*.test.ts']`. A dedicated config keeps the CRXJS plugin in `vite.config.ts` out of the test run.
-  - [ ] Add scripts to `package.json`: `"test": "vitest run"` and `"test:watch": "vitest"`. (`vitest run` is the deterministic single-run form so `npm test` terminates and can gate; record this as a deliberate, documented deviation from architecture.md:229's shorthand `test` (`vitest`).)
+- [x] **Task 3: Introduce Vitest** (AC: 5)
+  - [x] `npm install -D vitest@^4.1.0` (Vitest 4.1 is the first line with first-class Vite 8 support; Node ≥ 22.12 required — we run v22.22.1). This adds `vitest` to `devDependencies` and updates `package-lock.json`.
+  - [x] Create `vitest.config.ts` (see Dev Notes for the exact contents) with a `node` environment and `include: ['src/**/*.test.ts']`. A dedicated config keeps the CRXJS plugin in `vite.config.ts` out of the test run.
+  - [x] Add scripts to `package.json`: `"test": "vitest run"` and `"test:watch": "vitest"`. (`vitest run` is the deterministic single-run form so `npm test` terminates and can gate; record this as a deliberate, documented deviation from architecture.md:229's shorthand `test` (`vitest`).)
 
-- [ ] **Task 4: Write the exhaustive `parse.test.ts`** (AC: 1–5)
-  - [ ] `src/lib/parse.test.ts`, colocated, importing `{ describe, it, expect }` from `'vitest'` (explicit imports — no globals, so `tsconfig.json` stays untouched) and `parseMac` from `'./parse'`.
-  - [ ] Cover the full valid matrix (AC1/AC2) and the full invalid matrix (AC3/AC4), including the homoglyph/NBSP/ligature traps listed in Dev Notes. Use a table-driven style (`it.each` or a `for` loop).
-  - [ ] Assert the exact result shape: valid ⇒ `{ ok: true, canonical }` with `canonical` matching `/^[0-9A-F]{12}$/`; invalid ⇒ `toEqual({ ok: false, reason: 'invalid' })`.
+- [x] **Task 4: Write the exhaustive `parse.test.ts`** (AC: 1–5)
+  - [x] `src/lib/parse.test.ts`, colocated, importing `{ describe, it, expect }` from `'vitest'` (explicit imports — no globals, so `tsconfig.json` stays untouched) and `parseMac` from `'./parse'`.
+  - [x] Cover the full valid matrix (AC1/AC2) and the full invalid matrix (AC3/AC4), including the homoglyph/NBSP/ligature traps listed in Dev Notes. Use a table-driven style (`it.each` or a `for` loop).
+  - [x] Assert the exact result shape: valid ⇒ `{ ok: true, canonical }` with `canonical` matching `/^[0-9A-F]{12}$/`; invalid ⇒ `toEqual({ ok: false, reason: 'invalid' })`.
 
-- [ ] **Task 5: Apply the UX-DR3 MAC input chrome** (AC: 6)
-  - [ ] In `src/styles/app.css`, extend the existing `.mac-input` rule (do not rename it) with the base box: `box-sizing: border-box; width: 100%; padding: 11px 12px; background: var(--color-field); color: var(--color-text); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); outline: none;`. Keep the Story 1.2 typography lines.
-  - [ ] Add `.mac-input:focus-visible { border-color: var(--color-focus-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent); }` — the mockup's ring pattern with the accent color **replaced by the neutral-ink token**.
-  - [ ] Leave `.mac-input::placeholder` as-is (muted + `text-transform: none`). Update the file's inline comment to drop the "arrives with Story 1.3" note.
+- [x] **Task 5: Apply the UX-DR3 MAC input chrome** (AC: 6)
+  - [x] In `src/styles/app.css`, extend the existing `.mac-input` rule (do not rename it) with the base box: `box-sizing: border-box; width: 100%; padding: 11px 12px; background: var(--color-field); color: var(--color-text); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); outline: none;`. Keep the Story 1.2 typography lines.
+  - [x] Add `.mac-input:focus-visible { border-color: var(--color-focus-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent); }` — the mockup's ring pattern with the accent color **replaced by the neutral-ink token**.
+  - [x] Leave `.mac-input::placeholder` as-is (muted + `text-transform: none`). Update the file's inline comment to drop the "arrives with Story 1.3" note.
 
-- [ ] **Task 6: Verify** (AC: 1–6)
-  - [ ] `npm test` → all `parse.test.ts` cases pass.
-  - [ ] `npm run typecheck` → 0 errors (test file is under `src`, so `tsc` checks it too).
-  - [ ] `npm run build` → succeeds (bundler unaffected; the CRXJS build must still emit `dist/`).
-  - [ ] `grep`-confirm no `\s` (Unicode) stripping in `parse.ts` and that `parse.ts`/`types.ts` import nothing but `./types`.
-  - [ ] Manually: `npm run build`, reload the unpacked `dist` in Chrome, paste each of the five forms into the field and confirm the typed text renders uppercase in the field; Tab to the field and confirm the neutral-ink focus ring (no green/blue).
+- [x] **Task 6: Verify** (AC: 1–6)
+  - [x] `npm test` → all `parse.test.ts` cases pass.
+  - [x] `npm run typecheck` → 0 errors (test file is under `src`, so `tsc` checks it too).
+  - [x] `npm run build` → succeeds (bundler unaffected; the CRXJS build must still emit `dist/`).
+  - [x] `grep`-confirm no `\s` (Unicode) stripping in `parse.ts` and that `parse.ts`/`types.ts` import nothing but `./types`.
+  - [x] Manually: `npm run build`, reload the unpacked `dist` in Chrome, paste each of the five forms into the field and confirm the typed text renders uppercase in the field; Tab to the field and confirm the neutral-ink focus ring (no green/blue).
 
 ### Review Findings
 
@@ -229,8 +229,38 @@ Rationale/conflict note: `mockups/status-popup.html` renders focus with `.in:foc
 
 ### Agent Model Used
 
+opencode / big-pickle
+
 ### Debug Log References
+
+- `npm install -D vitest@^4.1.0` → **failed** with npm 9.2.0 arborist bug `TypeError: Cannot read properties of null (reading 'edgesOut')` at `loadPeerSet` while resolving Vite 8's optional `@vitejs/devtools-*` peers. Re-ran as `npm install -D vitest@^4.1.0 --legacy-peer-deps` → `added 25 packages` (`vitest@4.1.11`). A subsequent plain `npm install` reports `up to date`, so the lock is stable.
+- `npm test` → `Test Files 1 passed (1)`, `Tests 34 passed (34)`.
+- `npm run typecheck` → 0 errors (`tsc --noEmit`).
+- `npm run build` → success, `✓ 7 modules transformed`, emits `dist/assets/index-*.css` (3.82 kB) and the MV3 manifest unchanged.
+- Guardrails: `grep '\s' src/lib/parse.ts` → none; `parse.ts` imports only `./types`; `types.ts` has no imports; focused CSS uses `--color-focus-ring` (no status color); `git diff --stat index.html src/main.ts` → empty (untouched).
 
 ### Completion Notes List
 
+- **AC1/AC2 (forms + trim/case):** `parseMac` strips ASCII whitespace and separators `[\t\n\v\f\r :.-]`, validates, then uppercases. All five canonical forms plus mixed case, surrounding whitespace/newlines/tabs, mixed separators, and separators-anywhere reduce to `AABBCCDDEEFF`.
+- **AC3 (non-ASCII rejected):** the strip class is **ASCII-only** (never `\s`), so NBSP `U+00A0`, `U+2028`, fullwidth colon/ASCII (`U+FF1A`/`U+FF21`), en/em/non-breaking dashes, and `/` all remain and fail validation. Validation runs on the **un-uppercased** string against `/^[0-9A-Fa-f]{12}$/`, closing the Unicode full-case-expansion homoglyph hole (e.g. `U+FB00` `ﬀ` × 6 → would otherwise become `"FF"`×6) — locked by a dedicated test.
+- **AC4 (exactly one MAC):** 11/13 hex, non-hex, two MACs from a table export, trailing comma, and trailing vendor text are all `invalid` — no first-match guessing.
+- **AC5 (pure parser + tests):** `src/lib/types.ts` holds `ParseResult`; `src/lib/parse.ts` is pure (imports only `./types`, no DOM/`chrome.*`/I-O, never throws); co-located `src/lib/parse.test.ts` has 34 cases across the valid matrix, invalid matrix, and purity/contract checks.
+- **AC6 (UX-DR3 chrome):** `.mac-input` extended with full-width field background, `1.5px` border, `--radius-md`, `11px 12px` padding, `--color-text` foreground, and a neutral-ink `:focus-visible` ring (`--color-focus-ring` + 3px `color-mix` halo) — the mockup's ring geometry with the green accent replaced by the neutral token. Placeholder unchanged.
+- **Vitest introduction:** `vitest@4.1.11` (Vite 8-compatible, Node ≥22.12 satisfied), dedicated `vitest.config.ts` (`environment: node`, `include: src/**/*.test.ts`) so the CRXJS plugin never runs under tests, explicit `vitest` imports (no globals ⇒ `tsconfig.json` untouched). Scripts: `test` = `vitest run` (deterministic gate), `test:watch` = `vitest` — documented deviation from architecture.md:229's `vitest` shorthand.
+- **Out of scope respected:** `index.html` and `src/main.ts` untouched; no input wiring, no invalid-state styling, no new runtime deps, no network/permissions.
+- Manual visual check (reload unpacked `dist`, paste the five forms, Tab for the focus ring) is a user-performed confirmation, consistent with Stories 1.1/1.2.
+
+### Change Log
+
+- 2026-10-10: Implemented pure `parseMac` + `ParseResult`, introduced Vitest with exhaustive co-located tests, and applied the UX-DR3 MAC input chrome; status set to review.
+
 ### File List
+
+- `src/lib/types.ts` (new) — `ParseResult` discriminated union.
+- `src/lib/parse.ts` (new) — `parseMac(raw)` pure normalizer (ASCII strip → validate-before-uppercase).
+- `src/lib/parse.test.ts` (new) — 34 unit tests (valid/invalid/purity matrices).
+- `vitest.config.ts` (new) — Vitest node-env config, `src/**/*.test.ts`.
+- `package.json` (modified) — `vitest` devDependency; `test` / `test:watch` scripts.
+- `package-lock.json` (modified) — Vitest dependency tree (installed via `--legacy-peer-deps`).
+- `src/styles/app.css` (modified) — `.mac-input` UX-DR3 base chrome + `:focus-visible` neutral ring.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — story 1.3 status transitions.

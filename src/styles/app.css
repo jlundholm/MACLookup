@@ -126,13 +126,26 @@ body {
   color: var(--color-text);
 }
 
-/* MAC input — typography only; box chrome (field/border/radius/focus) arrives with Story 1.3 (UX-DR3). */
+/* MAC input — the only editable control (UX-DR3). */
 .mac-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 12px;
+  background: var(--color-field);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
   font-family: var(--font-sans);
   font-size: var(--type-mac-input-size);
   font-weight: var(--type-mac-input-weight);
   letter-spacing: var(--type-mac-input-tracking);
   text-transform: uppercase;
+}
+
+.mac-input:focus-visible {
+  border-color: var(--color-focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
 }
 
 .mac-input::placeholder {
