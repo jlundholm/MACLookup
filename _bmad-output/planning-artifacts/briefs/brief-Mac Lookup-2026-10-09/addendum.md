@@ -15,7 +15,7 @@ Detail captured during the brief that belongs in downstream documents (PRD, arch
 
 | Extension | Ratings / users | Formats | OUI lookup | Notes |
 |---|---|---|---|---|
-| **The reference extension** (name and store link intentionally omitted) | 0★ / 17 | colon, hyphen, Cisco-dot, none; input strips `: . - space`, requires 12 hex digits | Remote vendor API | ~11 KiB, light-only UI. Verified by reading its published CRX. "No data collection" refers to the developer; the MAC is still sent to a third-party API. |
+| **MAC Address Converter & OUI Lookup** (Adan Vasconcelos, `hgioagdbplaaoppldpepknaefffimill`) | 0★ / 17 | colon, hyphen, Cisco-dot, none; input strips `: . - space`, requires 12 hex digits | Remote vendor API | ~11 KiB, light-only UI. Verified by reading its published CRX. "No data collection" refers to the developer; the MAC is still sent to a third-party API. |
 | **MAC Address Converter** (bySimurg, `jjojkbcinpmiepacepclcckifmnhgamo`) | 5.0★ / 245 | configurable / reorderable | None | Convert-only. |
 | **Lookup MAC Address** (Gabriel Godri, `cjmkeakikfcijjbcdlgominglghpbojf`) | 3.6★ / ~515 | — | Stale/broken API | Reviews cite "request failed … not valid JSON". |
 | **NetworkCalc — IP Subnet Calculator** | 5.0★ | broad tool | OUI lookup included | Not a focused solution. |
