@@ -1,7 +1,89 @@
-/* OUI Scout popup shell geometry.
-   Design tokens (colors, typography, radii, spacing) arrive in Story 1.2. */
+/* OUI Scout design tokens, typography, and automatic light/dark theming (Story 1.2).
+   Values mirror DESIGN.md frontmatter exactly. Theming is pure CSS via
+   prefers-color-scheme — no JS listener, no toggle (Architecture: Communication Patterns). */
+
 :root {
   color-scheme: light dark;
+
+  /* Monochrome surfaces (light) */
+  --color-surface: #FFFFFF;
+  --color-field: #F6F8FA;
+  --color-border: #D6DBE1;
+  --color-text: #0B0D10;
+  --color-text-muted: #57606A;
+  --color-focus-ring: #0B0D10;
+
+  /* Status triads (light) — the only color in the product */
+  --color-found-bg: #E6F6EA;
+  --color-found-border: #A7E0B3;
+  --color-found-fg: #0F7B34;
+  --color-miss-bg: #FFF4DD;
+  --color-miss-border: #F0D199;
+  --color-miss-fg: #8A5300;
+  --color-invalid-bg: #FDEAEA;
+  --color-invalid-border: #F3B7B7;
+  --color-invalid-fg: #C62828;
+
+  /* Corner radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+
+  /* Typography — system stack only, never a webfont */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --type-body-size: 14px;
+  --type-body-weight: 400;
+  --type-body-line: 1.45;
+  --type-mac-input-size: 14px;
+  --type-mac-input-weight: 700;
+  --type-mac-input-tracking: 0.03em;
+  --type-readout-size: 13.5px;
+  --type-readout-weight: 700;
+  --type-readout-tracking: 0.03em;
+  --type-field-label-size: 10px;
+  --type-field-label-weight: 800;
+  --type-field-label-tracking: 0.09em;
+  --type-state-label-size: 12px;
+  --type-state-label-weight: 800;
+  --type-state-label-tracking: 0.13em;
+  --type-prefix-size: 11px;
+  --type-prefix-weight: 700;
+  --type-button-size: 11.5px;
+  --type-button-weight: 800;
+  --type-button-tracking: 0.04em;
+  --type-wordmark-size: 12.5px;
+  --type-wordmark-weight: 700;
+  --type-wordmark-tracking: 0.02em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Monochrome surfaces (dark) */
+    --color-surface: #0D1117;
+    --color-field: #161B22;
+    --color-border: #30363D;
+    --color-text: #F0F6FC;
+    --color-text-muted: #8B949E;
+    --color-focus-ring: #F0F6FC;
+
+    /* Status triads (dark) */
+    --color-found-bg: #0F2417;
+    --color-found-border: #1F6F3F;
+    --color-found-fg: #56D364;
+    --color-miss-bg: #2A2110;
+    --color-miss-border: #8A6D1E;
+    --color-miss-fg: #E3B341;
+    --color-invalid-bg: #2B1416;
+    --color-invalid-border: #8B3B3B;
+    --color-invalid-fg: #FF7B72;
+  }
 }
 
 html,
@@ -12,12 +94,83 @@ body {
 body {
   width: 360px;
   overflow: hidden;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-line);
 }
 
+/* Popup shell (components.popup-shell) — the single surface. */
 .popup {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
   width: 360px;
   overflow: hidden;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+/* Wordmark — plain text, no accent (DESIGN: Brand & Style). */
+.wordmark {
+  margin: 0;
+  font-size: var(--type-wordmark-size);
+  font-weight: var(--type-wordmark-weight);
+  letter-spacing: var(--type-wordmark-tracking);
+  color: var(--color-text);
+}
+
+/* MAC input — typography only; box chrome (field/border/radius/focus) arrives with Story 1.3 (UX-DR3). */
+.mac-input {
+  font-family: var(--font-sans);
+  font-size: var(--type-mac-input-size);
+  font-weight: var(--type-mac-input-weight);
+  letter-spacing: var(--type-mac-input-tracking);
+  text-transform: uppercase;
+}
+
+.mac-input::placeholder {
+  color: var(--color-text-muted);
+  text-transform: none;
+}
+
+/* Typographic role hooks reused by later components (format rows, banner, copy button). */
+.readout {
+  font-size: var(--type-readout-size);
+  font-weight: var(--type-readout-weight);
+  letter-spacing: var(--type-readout-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-label {
+  font-size: var(--type-field-label-size);
+  font-weight: var(--type-field-label-weight);
+  letter-spacing: var(--type-field-label-tracking);
+  text-transform: uppercase;
+}
+
+.state-label {
+  font-size: var(--type-state-label-size);
+  font-weight: var(--type-state-label-weight);
+  letter-spacing: var(--type-state-label-tracking);
+  text-transform: uppercase;
+}
+
+.prefix {
+  font-size: var(--type-prefix-size);
+  font-weight: var(--type-prefix-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.copy-button {
+  font-family: var(--font-sans);
+  font-size: var(--type-button-size);
+  font-weight: var(--type-button-weight);
+  letter-spacing: var(--type-button-tracking);
 }
