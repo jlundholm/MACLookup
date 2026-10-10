@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UX Design Validation: OUI Scout</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+  .resolved { color: var(--verdict-strong); font-weight: 600; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="title">
+        <h1>OUI Scout — UX Design Validation Report</h1>
+        <div class="subtitle">ux-Mac Lookup-2026-10-10</div>
+      </div>
+    </header>
+
+    <div class="synthesis">
+      <p>Structurally sound and mechanically clean: every token reference resolves, both UJs have complete flows with named protagonist / numbered steps / climax / failure, component names are identical across both spines, and the stated contrast targets hold under computation. Remaining issues are low-severity polish — a mock-vs-spine radius divergence, paraphrased UJ titles, example-voice meta-commentary, and a duplicated conflict disclaimer — none of which block a downstream consumer.</p>
+      <p>All eleven findings were applied during the Finalize polish pass (structural then prose editorial review), so this report is a pre-polish snapshot; the spine pair now ships with every finding below resolved.</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">Flow coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Token completeness</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Component coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">State coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Visual reference coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Bloat &amp; overspecification</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">Adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Inheritance discipline</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">Adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Shape fit</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">Strong</div>
+      </div>
+    </div>
+
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>1. Flow coverage</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>The two UJs from the PRD (UJ-1, UJ-2) are both present in EXPERIENCE.md.Key Flows with a named protagonist (Jared), numbered steps, an explicit climax beat, and a failure path.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Flow 1 failure path placed after the climax/terminal step</h3>
+              <span class="finding-location">EXPERIENCE.md:115–116</span>
+            </header>
+            <div class="finding-note">The clipboard-denied failure reads as a post-script rather than an alternate branch.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Label it "Failure (alternate)" or move it before the climax. <span class="resolved">Resolved.</span></div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Flow 1 cites only UJ-1, not the FRs it realizes</h3>
+              <span class="finding-location">EXPERIENCE.md:109–116</span>
+            </header>
+            <div class="finding-note">Flow realizes FR-3 and FR-5 but cites neither, so flow→FR traceability is partial.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add FR-3 / FR-5 citations alongside UJ-1. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>2. Token completeness</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>28 color tokens (all light+dark pairs, all six-digit hex), 8 typography roles, 4 rounded, 4 spacing, 6 components — every <code>{path.to.token}</code> reference resolves. Contrast targets stated and verified by computation: found 4.80:1, miss 5.80:1, invalid 4.85:1 (light), all ≥ AA 4.5:1.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Three component entries were free-text compound strings, not resolvable tokens</h3>
+              <span class="finding-location">DESIGN.md:119,152–154</span>
+            </header>
+            <div class="finding-note"><code>result-banner.layout</code>, <code>copy-button.hoverForeground</code> (pipe-delimited alternates), and <code>copiedState</code>/<code>disabledState</code> could not be mechanically extracted.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Split into discrete sub-tokens. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>3. Component coverage</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Component set is identical across all four locations — DESIGN frontmatter, DESIGN.Components, EXPERIENCE.Component Patterns, and prose: Popup shell, MAC input, Result banner, Status lamp, Format row, Copy button (6/6). Each has a real visual spec and a real behavioral rule.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">"Wordmark" named in IA and given a typography token, but no Components row</h3>
+              <span class="finding-location">DESIGN.md:213–222, EXPERIENCE.md:51–58</span>
+            </header>
+            <div class="finding-note">A named element without a component spec in either spine.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a one-line row or declare it a text element, not a component. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>4. State coverage</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Applicable states — empty/cold-open, found, miss, invalid, correcting, copy-confirmation, copy-failure, dark/light, offline — are all covered. Permission-denied and network error are correctly N/A and stated.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Focus treated as first-class but had no State Patterns row</h3>
+              <span class="finding-location">EXPERIENCE.md:80,85,91</span>
+            </header>
+            <div class="finding-note">If consumers read State Patterns as the state contract, keyboard-focus appearance was under-specified there.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a Focus row. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>5. Visual reference coverage</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>mockups/ has status-popup.html (linked inline in both spines, each stating what it illustrates); wireframes/ does not exist; imports/ is empty. No orphans; no unspecific references.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">"Spines win on conflict" appeared twice (once per spine)</h3>
+              <span class="finding-location">DESIGN.md:157, EXPERIENCE.md:30</span>
+            </header>
+            <div class="finding-note">The rubric wants the disclaimer stated once.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Keep it in EXPERIENCE.md only. <span class="resolved">Resolved.</span></div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Promoted mock diverged from the spine's shape tokens</h3>
+              <span class="finding-location">mockups/status-popup.html:87,97 vs DESIGN.md:117,141</span>
+            </header>
+            <div class="finding-note">Banner radius 9px vs <code>{rounded.lg}</code> 10px; row radius 7px vs <code>{rounded.md}</code> 8px — invites copy-paste drift.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Align the mock radii or annotate the divergence. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>6. Bloat &amp; overspecification</h2>
+          <span class="verdict-pill verdict-adequate">Adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN.md prose carries editorial voice (permitted). No source restatement of personas/FRs/scope. Pixel specs are confined to component anatomy, matching the examples' allowance.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">EXPERIENCE.md opened with an example-templated meta-blockquote</h3>
+              <span class="finding-location">EXPERIENCE.md:14</span>
+            </header>
+            <div class="finding-note">Essay-voice narrative ("Demonstrates: an inherited UI system…") untied to any decision, in a spine whose prose should not carry it.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Drop it or fold the substance into Foundation. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>7. Inheritance discipline</h2>
+          <span class="verdict-pill verdict-adequate">Adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Both spines' <code>sources</code> frontmatter resolves; component names are identical across every section of both files; EXPERIENCE's token reference resolves to a DESIGN token; glossary is inherited by reference.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">Medium</span>
+              <h3 class="finding-title">UJ titles paraphrased, not verbatim</h3>
+              <span class="finding-location">EXPERIENCE.md:109,118</span>
+            </header>
+            <div class="finding-note">PRD UJ-1 is "Jared pastes a MAC from a switch CLI and gets everything at once"; the spine rendered a paraphrase. IDs were preserved so traceability survived, but the verbatim-name rule was broken.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Mirror the source titles after the ID. <span class="resolved">Resolved.</span></div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Vocabulary drift with the source glossary</h3>
+              <span class="finding-location">EXPERIENCE.md; DESIGN.md</span>
+            </header>
+            <div class="finding-note">PRD term "Canonical value" never appeared in EXPERIENCE; DESIGN said "OUI prefix" where the PRD defines "Prefix" and "OUI" separately.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Use glossary terms where they apply. <span class="resolved">Resolved.</span></div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">Low</span>
+              <h3 class="finding-title">Header blockquote contradicted Foundation on UI-system inheritance</h3>
+              <span class="finding-location">EXPERIENCE.md:14 vs :18</span>
+            </header>
+            <div class="finding-note">The blockquote called Chrome's colors "an inherited UI system," while Foundation said "No external UI system is named."</div>
+            <div class="finding-fix"><strong>Fix:</strong> Reconcile the wording. <span class="resolved">Resolved.</span></div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>8. Shape fit</h2>
+          <span class="verdict-pill verdict-strong">Strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN.md sections are all present in canonical order; EXPERIENCE.md carries every required default plus a correctly-triggered Inspiration &amp; Anti-patterns. Responsive &amp; Platform is omitted and defensible (single surface). No invented sections. No findings.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Mechanical notes</h3>
+      <ul>
+        <li>Cross-refs: all <code>{path.to.token}</code> references in both spines resolve; no broken refs.</li>
+        <li>Frontmatter: both spines carry name, status, created, updated, sources. <code>status: draft</code> at review time; both set to <code>final</code> at close.</li>
+        <li>Contrast: DESIGN's AA claim verified by computation (light triads 4.80–5.85:1); status is also text-labeled, so color is never the sole signal (WCAG 1.4.1 satisfied).</li>
+        <li>Naming: component names identical across DESIGN frontmatter/Components and EXPERIENCE Component Patterns; no drift.</li>
+        <li>Mock artifact: status-popup.html is a promoted direction artifact — it retains stage chrome (browser frame, "Direction" header); annotated in-file as reference, not spec.</li>
+        <li>Mermaid: none present; nothing to validate.</li>
+        <li>Findings applied: 11 total (1 medium, 10 low) — all resolved during Finalize polish (structural + prose editorial passes).</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Rubric: review-rubric.md</span>
+        <span>Generated: 2026-10-10</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

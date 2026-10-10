@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction — Terminal (field instrument)</title>
+<style>
+/* =========================================================================
+   DIRECTION: TERMINAL — field-instrument / monospace register.
+   Rationale: Everything is set in monospace with hairline rules instead of
+   filled surfaces, evoking a switch CLI the user already lives in. Status is
+   carried by a quiet LED: green for a resolved Vendor, amber for no match —
+   color is signal, never decoration. Spacing is tight and the type is small,
+   so the popup reads like a readout, not a form.
+   -------------------------------------------------------------------------
+   DARK palette (primary)
+     bg            #0c0f0d   popup canvas
+     bone          #0a0c0b   frame page
+     bar           #131816   frame bar / input rail
+     text          #d7e0d9   primary mono text
+     muted         #6f7d73   labels, prefixes
+     hairline      #1e2823   rules
+     green (found) #3fb950
+     amber (miss)  #d29922
+     red (invalid) #f85149
+     cyan (focus)  #2f81f7
+   LIGHT palette
+     bg            #ffffff
+     bone          #f2f4f0
+     bar           #e9ede6
+     text          #0e120f
+     muted         #5c6b5f
+     hairline      #dbe0d8
+     green (found) #1a7f37
+     amber (miss)  #9a6700
+     red (invalid) #b42318
+     cyan (focus)  #0969da
+   ========================================================================= */
+:root{ --doc-bg:#f8f9fa; --doc-fg:#1f2328; --doc-muted:#5f6368; --doc-line:#e3e5e8; }
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#15171a; --doc-fg:#e6e6e6; --doc-muted:#9aa0a6; --doc-line:#2a2d31; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--doc-bg);color:var(--doc-fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.45;padding:32px 20px 64px;
+}
+.doc{max-width:560px;margin:0 auto 28px}
+.doc h1{font-size:17px;font-weight:600;margin:0 0 6px}
+.doc .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 10px}
+.doc .rationale{margin:0;color:var(--doc-muted);font-size:13.5px;max-width:62ch}
+.stage{max-width:560px;margin:0 auto 30px}
+.stage .slabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 8px;font-weight:600}
+
+/* ---- browser frame ---- */
+.frame{border:1px solid var(--doc-line);border-radius:10px;overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-bottom:1px solid var(--fline);background:var(--fbar)}
+.frame .dots{display:flex;gap:6px}
+.frame .dots i{width:11px;height:11px;border-radius:50%;display:block;background:var(--fdot)}
+.frame .omni{flex:1;height:22px;border-radius:11px;background:var(--fomni);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--fmuted)}
+.frame .ext{width:18px;height:18px;border-radius:4px;background:var(--fomni);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fmuted)}
+.frame .page{background:var(--fpage);padding:22px;display:flex;justify-content:center}
+
+.t-light{
+  --bg:#ffffff;--bone:#f2f4f0;--bar:#e9ede6;--text:#0e120f;--muted:#5c6b5f;--hairline:#dbe0d8;
+  --green:#1a7f37;--amber:#9a6700;--red:#b42318;--focus:#0969da;
+  --fpage:#f2f4f0;--fbar:#ffffff;--fline:#dbe0d8;--fomni:#e9ede6;--fmuted:#5c6b5f;--fdot:#dbe0d8;
+}
+.t-dark{
+  --bg:#0c0f0d;--bone:#0a0c0b;--bar:#131816;--text:#d7e0d9;--muted:#6f7d73;--hairline:#1e2823;
+  --green:#3fb950;--amber:#d29922;--red:#f85149;--focus:#2f81f7;
+  --fpage:#0a0c0b;--fbar:#131816;--fline:#1e2823;--fomni:#1c2421;--fmuted:#6f7d73;--fdot:#26302b;
+}
+
+/* ---- popup ---- */
+.popup{width:360px;background:var(--bg);color:var(--text);border:1px solid var(--hairline);border-radius:4px;
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;font-size:12px;letter-spacing:.01em;padding:10px 12px 12px}
+.ttl{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--hairline)}
+.ttl .name{font-weight:700;letter-spacing:.14em;font-size:11px;color:var(--text)}
+.ttl .sig{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.12em;color:var(--green)}
+.led{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;flex:none}
+.led.amber{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.led.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+.led.off{background:var(--muted);box-shadow:none}
+.cmd{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--hairline)}
+.cmd .pr{color:var(--muted);font-weight:700}
+.cmd input{flex:1;background:transparent;border:0;outline:none;color:var(--text);font:inherit;font-size:12.5px;letter-spacing:.03em;padding:0}
+.cmd input::placeholder{color:var(--muted)}
+.cmd.bad input{color:var(--red)}
+.err{display:flex;gap:6px;align-items:center;color:var(--red);font-size:10.5px;letter-spacing:.08em;padding:6px 0 0}
+.list{margin:0}
+.line{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--hairline)}
+.line .k{color:var(--muted);font-size:10px;letter-spacing:.12em}
+.line .v{color:var(--text);font-weight:600;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.line .v.empty{color:var(--muted);font-weight:400}
+.cp{font:inherit;font-size:10.5px;letter-spacing:.06em;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:2px 0}
+.cp:hover{color:var(--focus)}
+.cp.done{color:var(--green)}
+.cp.off{opacity:.4;cursor:not-allowed}
+.vendor{display:flex;align-items:center;gap:8px;padding-top:10px}
+.vendor .k{color:var(--muted);font-size:10px;letter-spacing:.12em;width:56px;flex:none}
+.vendor .nm{font-weight:700;letter-spacing:.03em;border-bottom:1px dashed var(--green);padding-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vendor .nm.amber{border-bottom-color:var(--amber)}
+.vendor .nm.empty{color:var(--muted);font-weight:400;border-bottom-color:var(--hairline)}
+.vendor .pfx{margin-left:auto;color:var(--muted);font-size:10.5px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <p class="tag">Direction 2 of 4</p>
+  <h1>Terminal</h1>
+  <p class="rationale">Monospace throughout with hairline rules instead of filled cards, so it reads like the switch CLI the user already types into. All uppercase field labels, a LED-style status dot, and a tight readout rhythm make it feel like a field instrument. Color is strictly signal: green means found, amber means no match.</p>
+</header>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Light</p>
+  <div class="frame t-light">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="ttl"><span class="name">OUI SCOUT</span><span class="sig"><span class="led"></span>READY · OFFLINE</span></div>
+        <div class="cmd"><span class="pr">&gt;</span><input value="F0:18:98:A1:B2:C3" readonly></div>
+        <div class="list">
+          <div class="line"><span class="k">COLON</span><span class="v">F0:18:98:A1:B2:C3</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">PLAIN</span><span class="v">F01898A1B2C3</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">CISCO-DOT</span><span class="v">F018.98A1.B2C3</span><button class="cp done">[copied]</button></div>
+        </div>
+        <div class="vendor"><span class="led"></span><span class="k">VENDOR</span><span class="nm">Apple, Inc.</span><span class="pfx">@F0:18:98</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Dark</p>
+  <div class="frame t-dark">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="ttl"><span class="name">OUI SCOUT</span><span class="sig"><span class="led"></span>READY · OFFLINE</span></div>
+        <div class="cmd"><span class="pr">&gt;</span><input value="F0:18:98:A1:B2:C3" readonly></div>
+        <div class="list">
+          <div class="line"><span class="k">COLON</span><span class="v">F0:18:98:A1:B2:C3</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">PLAIN</span><span class="v">F01898A1B2C3</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">CISCO-DOT</span><span class="v">F018.98A1.B2C3</span><button class="cp done">[copied]</button></div>
+        </div>
+        <div class="vendor"><span class="led"></span><span class="k">VENDOR</span><span class="nm">Apple, Inc.</span><span class="pfx">@F0:18:98</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — valid MAC, no matching OUI (unknown vendor) · Dark</p>
+  <div class="frame t-dark">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="ttl"><span class="name">OUI SCOUT</span><span class="sig" style="color:var(--amber)"><span class="led amber"></span>NO MATCH</span></div>
+        <div class="cmd"><span class="pr">&gt;</span><input value="AA:BB:CC:DD:EE:FF" readonly></div>
+        <div class="list">
+          <div class="line"><span class="k">COLON</span><span class="v">AA:BB:CC:DD:EE:FF</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">PLAIN</span><span class="v">AABBCCDDEEFF</span><button class="cp">[copy]</button></div>
+          <div class="line"><span class="k">CISCO-DOT</span><span class="v">AABB.CCDD.EEFF</span><button class="cp">[copy]</button></div>
+        </div>
+        <div class="vendor"><span class="led amber"></span><span class="k">VENDOR</span><span class="nm amber">Unknown vendor</span><span class="pfx">@AA:BB:CC</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction — Carded (friendly consumer polish)</title>
+<style>
+/* =========================================================================
+   DIRECTION: CARDED — friendlier, rounded, more whitespace.
+   Rationale: Each format lives on its own soft card with a gentle shadow and
+   generous padding, giving the tiny popup a calm, consumer-polished rhythm
+   without adding weight. Rounded pills, a Vendor avatar chip, and a roomier
+   layout make it feel approachable rather than utilitarian. It stays light —
+   one soft blue accent, no gradient, no chrome.
+   -------------------------------------------------------------------------
+   LIGHT palette
+     page      #eef1f6   frame backdrop
+     surface   #ffffff   popup
+     card      #ffffff   format cards
+     border    #e6e9ef
+     text      #1c1e21
+     muted     #6b7280
+     accent    #3b6fe0   soft blue
+     accent-bg #eaf1ff
+     success   #157f3d
+     warn      #b45309
+     shadow    rgba(23,34,59,.08)
+   DARK palette
+     page      #14161b
+     surface   #1c1f26
+     card      #23272f
+     border    #31363f
+     text      #e8eaf0
+     muted     #9aa3b2
+     accent    #8ab4f8
+     accent-bg #22355c
+     success   #4ac26b
+     warn      #e3a008
+     shadow    rgba(0,0,0,.35)
+   ========================================================================= */
+:root{ --doc-bg:#f8f9fa; --doc-fg:#1f2328; --doc-muted:#5f6368; --doc-line:#e3e5e8; }
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#15171a; --doc-fg:#e6e6e6; --doc-muted:#9aa0a6; --doc-line:#2a2d31; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--doc-bg);color:var(--doc-fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.45;padding:32px 20px 64px;
+}
+.doc{max-width:540px;margin:0 auto 28px}
+.doc h1{font-size:17px;font-weight:600;margin:0 0 6px}
+.doc .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 10px}
+.doc .rationale{margin:0;color:var(--doc-muted);font-size:13.5px;max-width:62ch}
+.stage{max-width:540px;margin:0 auto 30px}
+.stage .slabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 8px;font-weight:600}
+
+/* ---- browser frame ---- */
+.frame{border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-bottom:1px solid var(--fline);background:var(--fbar)}
+.frame .dots{display:flex;gap:6px}
+.frame .dots i{width:11px;height:11px;border-radius:50%;display:block;background:var(--fdot)}
+.frame .omni{flex:1;height:24px;border-radius:12px;background:var(--fomni);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--fmuted)}
+.frame .ext{width:18px;height:18px;border-radius:5px;background:var(--fomni);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fmuted)}
+.frame .page{background:var(--fpage);padding:24px;display:flex;justify-content:center}
+
+.t-light{
+  --page:#eef1f6;--surface:#ffffff;--card:#ffffff;--border:#e6e9ef;--text:#1c1e21;--muted:#6b7280;
+  --accent:#3b6fe0;--accentbg:#eaf1ff;--success:#157f3d;--warn:#b45309;--shadow:rgba(23,34,59,.08);
+  --field:#f4f6fa;
+  --fpage:#eef1f6;--fbar:#ffffff;--fline:#e6e9ef;--fomni:#eef1f6;--fmuted:#6b7280;--fdot:#e6e9ef;
+}
+.t-dark{
+  --page:#14161b;--surface:#1c1f26;--card:#23272f;--border:#31363f;--text:#e8eaf0;--muted:#9aa3b2;
+  --accent:#8ab4f8;--accentbg:#22355c;--success:#4ac26b;--warn:#e3a008;--shadow:rgba(0,0,0,.35);
+  --field:#15181e;
+  --fpage:#14161b;--fbar:#1c1f26;--fline:#31363f;--fomni:#22262e;--fmuted:#9aa3b2;--fdot:#31363f;
+}
+
+/* ---- popup ---- */
+.popup{width:360px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px;
+  padding:16px;box-shadow:0 8px 24px var(--shadow)}
+.head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--accentbg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.name{font-size:14px;font-weight:700;letter-spacing:.01em}
+.sub{font-size:11px;color:var(--muted)}
+.offline{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--muted);background:var(--field);border:1px solid var(--border);border-radius:999px;padding:3px 9px}
+.in{width:100%;font:inherit;font-size:14px;letter-spacing:.02em;color:var(--text);background:var(--field);
+  border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;outline:none}
+.in::placeholder{color:var(--muted)}
+.in:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px var(--accentbg)}
+.in.bad{border-color:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.14)}
+.err{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#c62a2f;margin:10px 2px 0}
+.cards{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.card{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px var(--shadow)}
+.card .body{min-width:0;flex:1}
+.k{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.v{font-size:14px;font-weight:600;letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.v.empty{color:var(--muted);font-weight:500}
+.copy{font:inherit;font-size:12px;font-weight:600;color:var(--accent);background:var(--accentbg);border:0;border-radius:999px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.copy:hover{filter:brightness(.97)}
+.copy.done{color:var(--success);background:transparent;border:1px solid var(--border);cursor:default}
+.copy.off{color:var(--muted);background:var(--field);cursor:not-allowed;opacity:.7}
+.vendor{display:flex;align-items:center;gap:11px;margin-top:14px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 2px var(--shadow)}
+.av{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--accent);background:var(--accentbg)}
+.av.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.vendor .body{flex:1;min-width:0}
+.vendor .nm{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vendor .nm.warn{color:var(--warn)}
+.pfx{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <p class="tag">Direction 3 of 4</p>
+  <h1>Carded</h1>
+  <p class="rationale">Each format sits on its own soft, lightly shadowed card with roomy padding and rounded corners, giving the small popup a calm, friendly rhythm. A Vendor avatar chip and pill copy buttons add consumer polish while keeping the surface light. Still one soft-blue accent, no gradients — approachable, not heavy.</p>
+</header>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Light</p>
+  <div class="frame t-light">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="head"><div class="logo">◈</div><div><div class="name">OUI Scout</div><div class="sub">MAC converter &amp; vendor lookup</div></div><span class="offline">Offline</span></div>
+        <input class="in" value="F0:18:98:A1:B2:C3" readonly>
+        <div class="cards">
+          <div class="card"><div class="body"><div class="k">Colon</div><div class="v">F0:18:98:A1:B2:C3</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Plain</div><div class="v">F01898A1B2C3</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Cisco-dot</div><div class="v">F018.98A1.B2C3</div></div><button class="copy done">Copied</button></div>
+        </div>
+        <div class="vendor"><div class="av">A</div><div class="body"><div class="k">Vendor</div><div class="nm">Apple, Inc.</div></div><span class="pfx">F0:18:98</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Dark</p>
+  <div class="frame t-dark">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="head"><div class="logo">◈</div><div><div class="name">OUI Scout</div><div class="sub">MAC converter &amp; vendor lookup</div></div><span class="offline">Offline</span></div>
+        <input class="in" value="F0:18:98:A1:B2:C3" readonly>
+        <div class="cards">
+          <div class="card"><div class="body"><div class="k">Colon</div><div class="v">F0:18:98:A1:B2:C3</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Plain</div><div class="v">F01898A1B2C3</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Cisco-dot</div><div class="v">F018.98A1.B2C3</div></div><button class="copy done">Copied</button></div>
+        </div>
+        <div class="vendor"><div class="av">A</div><div class="body"><div class="k">Vendor</div><div class="nm">Apple, Inc.</div></div><span class="pfx">F0:18:98</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — valid MAC, no matching OUI (unknown vendor) · Light</p>
+  <div class="frame t-light">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="head"><div class="logo">◈</div><div><div class="name">OUI Scout</div><div class="sub">MAC converter &amp; vendor lookup</div></div><span class="offline">Offline</span></div>
+        <input class="in" value="AA:BB:CC:DD:EE:FF" readonly>
+        <div class="cards">
+          <div class="card"><div class="body"><div class="k">Colon</div><div class="v">AA:BB:CC:DD:EE:FF</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Plain</div><div class="v">AABBCCDDEEFF</div></div><button class="copy">Copy</button></div>
+          <div class="card"><div class="body"><div class="k">Cisco-dot</div><div class="v">AABB.CCDD.EEFF</div></div><button class="copy">Copy</button></div>
+        </div>
+        <div class="vendor"><div class="av warn">?</div><div class="body"><div class="k">Vendor</div><div class="nm warn">Unknown vendor</div></div><span class="pfx">AA:BB:CC</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

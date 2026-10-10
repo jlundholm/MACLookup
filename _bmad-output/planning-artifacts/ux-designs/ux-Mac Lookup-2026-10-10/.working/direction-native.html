@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction — Native (Chrome-faithful)</title>
+<style>
+/* =========================================================================
+   DIRECTION: NATIVE — looks like it belongs in Chrome.
+   Rationale: Adopts Chrome's own surface vocabulary — filled rounded fields,
+   system color roles, and a flat blue text-button — so the popup reads as a
+   browser pane, not an app. Density is high and decoration is near-zero: the
+   only color is Chrome blue on the copy affordance. This is the "invisible
+   styling" baseline.
+   -------------------------------------------------------------------------
+   LIGHT palette (system color role -> concrete value)
+     Canvas        #ffffff   page/popup surface
+     CanvasText    #202124   primary text
+     muted text    #5f6368
+     Field         #f1f3f4   input + result rows
+     (dark) #e8eaed
+     Field border  #dadce0
+     ButtonFace    #f1f3f4   copy button
+     Button hover  #e8eaed
+     Divider       #e8eaed
+     Accent        #1a73e8   Chrome blue
+     Accent hover  #1765cc
+     Error         #d93025
+     Success       #188038
+   DARK palette
+     Canvas        #202124
+     CanvasText    #e8eaed
+     muted text    #9aa0a6
+     Field         #292a2d
+     Field border  #5f6368
+     ButtonFace    #303134
+     Button hover  #3c4043
+     Divider       #3c4043
+     Accent        #8ab4f8
+     Accent hover  #aecbfa
+     Error         #f28b82
+     Success       #81c995
+   Frame chrome: backdrop #f1f3f4 (light) / #17181a (dark), bar text #5f6368.
+   ========================================================================= */
+:root{
+  --doc-bg:#f8f9fa; --doc-fg:#1f2328; --doc-muted:#5f6368; --doc-line:#e3e5e8;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#15171a; --doc-fg:#e6e6e6; --doc-muted:#9aa0a6; --doc-line:#2a2d31; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--doc-bg); color:var(--doc-fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.45; padding:32px 20px 64px;
+}
+.doc{max-width:520px;margin:0 auto 28px}
+.doc h1{font-size:17px;font-weight:600;margin:0 0 6px}
+.doc .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 10px}
+.doc .rationale{margin:0;color:var(--doc-muted);font-size:13.5px;max-width:60ch}
+.stage{max-width:520px;margin:0 auto 30px}
+.stage .slabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 8px;font-weight:600}
+
+/* ---- browser frame ---- */
+.frame{border:1px solid var(--doc-line);border-radius:10px;overflow:hidden;font-family:inherit}
+.frame .win{display:flex;flex-direction:column}
+.frame .bar{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-bottom:1px solid var(--fline);background:var(--fbar)}
+.frame .dots{display:flex;gap:6px}
+.frame .dots i{width:11px;height:11px;border-radius:50%;display:block;background:var(--fdot)}
+.frame .omni{flex:1;height:22px;border-radius:11px;background:var(--fomni);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--fmuted)}
+.frame .ext{width:18px;height:18px;border-radius:4px;background:var(--fomni);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fmuted)}
+.frame .page{background:var(--fpage);padding:22px;display:flex;justify-content:center}
+
+/* theme scopes */
+.t-light{
+  --canvas:#ffffff; --text:#202124; --muted:#5f6368; --field:#f1f3f4; --fldborder:#dadce0;
+  --btn:#f1f3f4; --btnhover:#e8eaed; --divider:#e8eaed; --accent:#1a73e8; --accenthover:#1765cc;
+  --error:#d93025; --success:#188038;
+  --fpage:#f1f3f4; --fbar:#ffffff; --fline:#dadce0; --fomni:#f1f3f4; --fmuted:#5f6368; --fdot:#dadce0;
+}
+.t-dark{
+  --canvas:#202124; --text:#e8eaed; --muted:#9aa0a6; --field:#292a2d; --fldborder:#5f6368;
+  --btn:#303134; --btnhover:#3c4043; --divider:#3c4043; --accent:#8ab4f8; --accenthover:#aecbfa;
+  --error:#f28b82; --success:#81c995;
+  --fpage:#17181a; --fbar:#292a2d; --fline:#3c4043; --fomni:#3c4043; --fmuted:#9aa0a6; --fdot:#5f6368;
+}
+
+/* ---- popup ---- */
+.popup{width:360px;background:var(--canvas);color:var(--text);border:1px solid var(--fldborder);border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.10)}
+.head{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 10px}
+.brand{font-size:13px;font-weight:600;letter-spacing:.01em}
+.brand .dot{color:var(--accent)}
+.hint{font-size:11px;color:var(--muted)}
+.in{width:100%;font:inherit;font-size:13px;letter-spacing:.02em;color:var(--text);background:var(--field);
+  border:1px solid transparent;border-radius:8px;padding:10px 12px;outline:none}
+.in::placeholder{color:var(--muted)}
+.in.focus{border-color:var(--accent);background:var(--canvas);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.in.bad{border-color:var(--error);box-shadow:0 0 0 3px color-mix(in srgb,var(--error) 18%,transparent)}
+.msg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--error);margin:8px 2px 2px}
+.msg .ic{font-size:12px}
+.rows{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:8px;background:var(--field);border-radius:8px;padding:6px 8px 6px 12px;min-height:36px}
+.row .lab{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.row .val{font-size:13px;font-weight:500;letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .val.empty{color:var(--muted);font-weight:400}
+.copy{font:inherit;font-size:12px;font-weight:600;color:var(--accent);background:transparent;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
+.copy:hover{background:var(--btnhover)}
+.copy.done{color:var(--success);cursor:default}
+.copy.off{color:var(--muted);opacity:.55;cursor:not-allowed}
+.vendor{margin-top:8px;background:var(--field);border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vendor .left{min-width:0}
+.vendor .lab{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.vendor .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vendor .name.empty{color:var(--muted);font-weight:500}
+.vendor .pfx{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.foot{display:flex;justify-content:space-between;align-items:center;margin:10px 2px 0;font-size:10.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <p class="tag">Direction 1 of 4</p>
+  <h1>Native</h1>
+  <p class="rationale">Chrome-faithful and nearly invisible: filled rounded fields, system color roles, and a flat Chrome-blue text link for the only action. It is dense and undecorated so the popup feels like a pane of the browser itself, not a separate app. Blue is used once — on the copy affordance — and nowhere else.</p>
+</header>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Light</p>
+  <div class="frame t-light">
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+      <div class="page">
+        <div class="popup">
+          <div class="head"><span class="brand">OUI <span class="dot">Scout</span></span><span class="hint">offline</span></div>
+          <input class="in focus" value="F0:18:98:A1:B2:C3" readonly>
+          <div class="rows">
+            <div class="row"><span class="lab">Colon</span><span class="val">F0:18:98:A1:B2:C3</span><button class="copy">Copy</button></div>
+            <div class="row"><span class="lab">Plain</span><span class="val">F01898A1B2C3</span><button class="copy">Copy</button></div>
+            <div class="row"><span class="lab">Cisco-dot</span><span class="val">F018.98A1.B2C3</span><button class="copy done">Copied</button></div>
+          </div>
+          <div class="vendor"><div class="left"><span class="lab">Vendor</span><span class="name">Apple, Inc.</span></div><span class="pfx">F0:18:98</span></div>
+          <div class="foot"><span>Normalized to uppercase</span><span>No data leaves the device</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Dark</p>
+  <div class="frame t-dark">
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+      <div class="page">
+        <div class="popup">
+          <div class="head"><span class="brand">OUI <span class="dot">Scout</span></span><span class="hint">offline</span></div>
+          <input class="in focus" value="F0:18:98:A1:B2:C3" readonly>
+          <div class="rows">
+            <div class="row"><span class="lab">Colon</span><span class="val">F0:18:98:A1:B2:C3</span><button class="copy">Copy</button></div>
+            <div class="row"><span class="lab">Plain</span><span class="val">F01898A1B2C3</span><button class="copy">Copy</button></div>
+            <div class="row"><span class="lab">Cisco-dot</span><span class="val">F018.98A1.B2C3</span><button class="copy done">Copied</button></div>
+          </div>
+          <div class="vendor"><div class="left"><span class="lab">Vendor</span><span class="name">Apple, Inc.</span></div><span class="pfx">F0:18:98</span></div>
+          <div class="foot"><span>Normalized to uppercase</span><span>No data leaves the device</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — invalid input · Light</p>
+  <div class="frame t-light">
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+      <div class="page">
+        <div class="popup">
+          <div class="head"><span class="brand">OUI <span class="dot">Scout</span></span><span class="hint">offline</span></div>
+          <input class="in bad" value="switch-uplink-3" readonly>
+          <div class="msg"><span class="ic">!</span>Not a valid MAC address</div>
+          <div class="rows">
+            <div class="row"><span class="lab">Colon</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+            <div class="row"><span class="lab">Plain</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+            <div class="row"><span class="lab">Cisco-dot</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+          </div>
+          <div class="vendor"><div class="left"><span class="lab">Vendor</span><span class="name empty">—</span></div><span class="pfx">no result</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — resting / empty (placeholder) · Light</p>
+  <div class="frame t-light">
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+      <div class="page">
+        <div class="popup">
+          <div class="head"><span class="brand">OUI <span class="dot">Scout</span></span><span class="hint">offline</span></div>
+          <input class="in" placeholder="Paste a MAC address" readonly>
+          <div class="rows">
+            <div class="row"><span class="lab">Colon</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+            <div class="row"><span class="lab">Plain</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+            <div class="row"><span class="lab">Cisco-dot</span><span class="val empty">—</span><button class="copy off">Copy</button></div>
+          </div>
+          <div class="vendor"><div class="left"><span class="lab">Vendor</span><span class="name empty">—</span></div><span class="pfx">waiting for input</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

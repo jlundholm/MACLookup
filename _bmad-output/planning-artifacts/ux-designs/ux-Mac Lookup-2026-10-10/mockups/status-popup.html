@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction — Status (outcome-forward)</title>
+<style>
+/* =========================================================================
+   DIRECTION: STATUS — the lookup outcome is the hero.
+   Rationale: A bold lamp-lit banner announces FOUND / NOT FOUND / INVALID in
+   one glance, and the accent color itself carries the outcome — green, amber,
+   or red — so the result reads before any word does. Type is heavier and
+   contrast is pushed higher than the other directions, and every format row
+   inherits a matching status rail. It is deliberately the loudest of the four,
+   but still single-screen and chrome-free.
+   VISUAL REFERENCE ONLY — the browser frame, window dots, and "Direction" header
+   are stage chrome, not part of the product surface. Spines win on conflict.
+   -------------------------------------------------------------------------
+   LIGHT palette
+     surface   #ffffff   popup
+     field     #f6f8fa
+     line      #d6dbe1
+     text      #0b0d10
+     muted     #57606a
+     FOUND     bg #e6f6ea  line #a7e0b3  fg #0f7b34
+     NOT FOUND bg #fff4dd  line #f0d199  fg #8a5300
+     INVALID   bg #fdeaea  line #f3b7b7  fg #c62828
+   DARK palette
+     surface   #0d1117
+     field     #161b22
+     line      #30363d
+     text      #f0f6fc
+     muted     #8b949e
+     FOUND     bg #0f2417  line #1f6f3f  fg #56d364
+     NOT FOUND bg #2a2110  line #8a6d1e  fg #e3b341
+     INVALID   bg #2b1416  line #8b3b3b  fg #ff7b72
+   ========================================================================= */
+:root{ --doc-bg:#f8f9fa; --doc-fg:#1f2328; --doc-muted:#5f6368; --doc-line:#e3e5e8; }
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#15171a; --doc-fg:#e6e6e6; --doc-muted:#9aa0a6; --doc-line:#2a2d31; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--doc-bg);color:var(--doc-fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.45;padding:32px 20px 64px;
+}
+.doc{max-width:540px;margin:0 auto 28px}
+.doc h1{font-size:17px;font-weight:600;margin:0 0 6px}
+.doc .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 10px}
+.doc .rationale{margin:0;color:var(--doc-muted);font-size:13.5px;max-width:62ch}
+.stage{max-width:540px;margin:0 auto 30px}
+.stage .slabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--doc-muted);margin:0 0 8px;font-weight:600}
+
+/* ---- browser frame ---- */
+.frame{border:1px solid var(--doc-line);border-radius:10px;overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-bottom:1px solid var(--fline);background:var(--fbar)}
+.frame .dots{display:flex;gap:6px}
+.frame .dots i{width:11px;height:11px;border-radius:50%;display:block;background:var(--fdot)}
+.frame .omni{flex:1;height:24px;border-radius:12px;background:var(--fomni);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--fmuted)}
+.frame .ext{width:18px;height:18px;border-radius:5px;background:var(--fomni);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fmuted)}.frame .page{background:var(--fpage);padding:24px;display:flex;justify-content:center}
+
+.t-light{
+  --surface:#ffffff;--field:#f6f8fa;--line:#d6dbe1;--text:#0b0d10;--muted:#57606a;
+  --accbg:#e6f6ea;--accline:#a7e0b3;--accfg:#0f7b34;
+  --warnbg:#fff4dd;--warnline:#f0d199;--warnfg:#8a5300;
+  --badbg:#fdeaea;--badline:#f3b7b7;--badfg:#c62828;
+  --fpage:#eaeef2;--fbar:#ffffff;--fline:#d6dbe1;--fomni:#eef1f4;--fmuted:#57606a;--fdot:#d6dbe1;
+}
+.t-dark{
+  --surface:#0d1117;--field:#161b22;--line:#30363d;--text:#f0f6fc;--muted:#8b949e;
+  --accbg:#0f2417;--accline:#1f6f3f;--accfg:#56d364;
+  --warnbg:#2a2110;--warnline:#8a6d1e;--warnfg:#e3b341;
+  --badbg:#2b1416;--badline:#8b3b3b;--badfg:#ff7b72;
+  --fpage:#0a0d12;--fbar:#161b22;--fline:#30363d;--fomni:#21262d;--fmuted:#8b949e;--fdot:#30363d;
+}
+
+/* ---- popup ---- */
+.popup{width:360px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.16)}
+.top{display:flex;align-items:center;justify-content:space-between;margin:1px 2px 10px}
+.mark{font-size:12.5px;font-weight:700;letter-spacing:.02em}
+.mark .b{color:var(--accfg)}
+.in{width:100%;font:inherit;font-size:14px;font-weight:700;letter-spacing:.03em;color:var(--text);background:var(--field);
+  border:1.5px solid var(--line);border-radius:8px;padding:11px 12px;outline:none;text-transform:uppercase}
+.in::placeholder{color:var(--muted);font-weight:500;text-transform:none}
+.in:focus{border-color:var(--accfg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accfg) 22%,transparent)}
+.in.bad{border-color:var(--badfg);box-shadow:0 0 0 3px color-mix(in srgb,var(--badfg) 20%,transparent);color:var(--badfg)}
+.banner{display:flex;align-items:center;gap:11px;margin-top:11px;padding:11px 13px;border-radius:10px;border:1.5px solid}
+.banner.found{background:var(--accbg);border-color:var(--accline);color:var(--accfg)}
+.banner.miss{background:var(--warnbg);border-color:var(--warnline);color:var(--warnfg)}
+.banner.invalid{background:var(--badbg);border-color:var(--badline);color:var(--badfg)}
+.lamp{width:13px;height:13px;border-radius:50%;flex:none;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 22%,transparent)}
+.banner .btxt{min-width:0;flex:1}
+.banner .bstate{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;line-height:1.1}
+.banner .bval{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner .bpfx{font-size:11px;font-weight:700;opacity:.9;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rows{margin-top:11px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;align-items:center;gap:9px;background:var(--field);border:1px solid var(--line);border-left:4px solid var(--rail,var(--line));border-radius:8px;padding:8px 8px 8px 10px}
+.row .meta{min-width:0;flex:1}
+.row .k{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.row .v{font-size:13.5px;font-weight:700;letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .v.empty{color:var(--muted);font-weight:500}
+.rows.found .row{--rail:var(--accfg)}
+.rows.miss .row{--rail:var(--warnfg)}
+.rows.invalid .row{--rail:var(--badfg)}
+.copy{font:inherit;font-size:11.5px;font-weight:800;letter-spacing:.04em;color:var(--text);background:transparent;border:1.5px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer;white-space:nowrap}
+.copy:hover{border-color:var(--accfg);color:var(--accfg)}
+.copy.done{color:var(--accfg);border-color:var(--accline);background:var(--accbg);cursor:default}
+.copy.off{color:var(--muted);opacity:.5;cursor:not-allowed;border-color:var(--line)}
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <p class="tag">Direction 4 of 4</p>
+  <h1>Status</h1>
+  <p class="rationale">The lookup outcome is promoted to a bold, lamp-lit banner, and the accent color itself encodes the result — green for found, amber for no match, red for invalid — so it reads before the words do. Type is heavier and contrast higher than the other directions, and each format row inherits a matching color rail. Loudest of the four, yet still one chrome-free screen.</p>
+</header>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Light</p>
+  <div class="frame t-light">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="top"><span class="mark">OUI <span class="b">Scout</span></span></div>
+        <input class="in" value="F0:18:98:A1:B2:C3" readonly>
+        <div class="banner found"><span class="lamp"></span><div class="btxt"><div class="bstate">Found</div><div class="bval">Apple, Inc.</div></div><span class="bpfx">F0:18:98</span></div>
+        <div class="rows found">
+          <div class="row"><div class="meta"><div class="k">Colon</div><div class="v">F0:18:98:A1:B2:C3</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Plain</div><div class="v">F01898A1B2C3</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Cisco-dot</div><div class="v">F018.98A1.B2C3</div></div><button class="copy done">Copied</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">Hero — valid MAC, Vendor found · Dark</p>
+  <div class="frame t-dark">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="top"><span class="mark">OUI <span class="b">Scout</span></span></div>
+        <input class="in" value="F0:18:98:A1:B2:C3" readonly>
+        <div class="banner found"><span class="lamp"></span><div class="btxt"><div class="bstate">Found</div><div class="bval">Apple, Inc.</div></div><span class="bpfx">F0:18:98</span></div>
+        <div class="rows found">
+          <div class="row"><div class="meta"><div class="k">Colon</div><div class="v">F0:18:98:A1:B2:C3</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Plain</div><div class="v">F01898A1B2C3</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Cisco-dot</div><div class="v">F018.98A1.B2C3</div></div><button class="copy done">Copied</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — valid MAC, no matching OUI (unknown vendor) · Dark</p>
+  <div class="frame t-dark">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="top"><span class="mark">OUI <span class="b">Scout</span></span></div>
+        <input class="in" value="AA:BB:CC:DD:EE:FF" readonly>
+        <div class="banner miss"><span class="lamp"></span><div class="btxt"><div class="bstate">Not found</div><div class="bval">Unknown vendor</div></div><span class="bpfx">AA:BB:CC</span></div>
+        <div class="rows miss">
+          <div class="row"><div class="meta"><div class="k">Colon</div><div class="v">AA:BB:CC:DD:EE:FF</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Plain</div><div class="v">AABBCCDDEEFF</div></div><button class="copy">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Cisco-dot</div><div class="v">AABB.CCDD.EEFF</div></div><button class="copy">Copy</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <p class="slabel">State — invalid input · Light</p>
+  <div class="frame t-light">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="omni">chrome-extension://.../popup.html</div><div class="ext">◆</div></div>
+    <div class="page">
+      <div class="popup">
+        <div class="top"><span class="mark">OUI <span class="b">Scout</span></span></div>
+        <input class="in bad" value="switch-uplink-3" readonly>
+        <div class="banner invalid"><span class="lamp"></span><div class="btxt"><div class="bstate">Invalid</div><div class="bval">Not a valid MAC address</div></div></div>
+        <div class="rows invalid">
+          <div class="row"><div class="meta"><div class="k">Colon</div><div class="v empty">—</div></div><button class="copy off">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Plain</div><div class="v empty">—</div></div><button class="copy off">Copy</button></div>
+          <div class="row"><div class="meta"><div class="k">Cisco-dot</div><div class="v empty">—</div></div><button class="copy off">Copy</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
