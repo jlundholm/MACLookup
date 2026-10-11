@@ -4,7 +4,7 @@ baseline_commit: 679093333e14a3aecebb573b5367bd4f6de72a6f
 
 # Story 1.7: Make the popup keyboard- and screen-reader-accessible
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,12 +27,12 @@ So that it is usable with assistive tech.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Autofocus + Tab-order contracts in markup (AC: 1, 2, 8)
-  - [ ] In `index.html`, add the `autofocus` attribute to `<input id="mac-input">` (declarative; Chrome MV3 popups honor it — no JS `focus()` call in `main.ts`).
-  - [ ] Do **not** add any `tabindex` anywhere: DOM order already yields the required reading order (input → `#input-error` → `#result-banner` → rows colon, plain, cisco; only the input and the three `<button>`s are focusable; buttons are natively tabbable, `#input-error`/`#result-banner` are not). Enforce this contract with a drift test (Task 5) instead of attributes.
-  - [ ] AC8 is already satisfied — Story 1.1 shipped `aria-label="MAC address"` on the input (verified: `git log -S 'aria-label'` → `e53247a`). Do not change the string; lock it with a drift test (Task 5).
-- [ ] Task 2: Neutral focus ring on the copy buttons (AC: 2)
-  - [ ] In `src/styles/app.css`, directly **after** the `[data-copy]`/`:disabled` button state rules (so equal-specificity ties resolve to focus), add — mirroring the Story 1.3 `.mac-input:focus-visible` pattern (outline suppressed, neutral halo carries the cue):
+- [x] Task 1: Autofocus + Tab-order contracts in markup (AC: 1, 2, 8)
+  - [x] In `index.html`, add the `autofocus` attribute to `<input id="mac-input">` (declarative; Chrome MV3 popups honor it — no JS `focus()` call in `main.ts`).
+  - [x] Do **not** add any `tabindex` anywhere: DOM order already yields the required reading order (input → `#input-error` → `#result-banner` → rows colon, plain, cisco; only the input and the three `<button>`s are focusable; buttons are natively tabbable, `#input-error`/`#result-banner` are not). Enforce this contract with a drift test (Task 5) instead of attributes.
+  - [x] AC8 is already satisfied — Story 1.1 shipped `aria-label="MAC address"` on the input (verified: `git log -S 'aria-label'` → `e53247a`). Do not change the string; lock it with a drift test (Task 5).
+- [x] Task 2: Neutral focus ring on the copy buttons (AC: 2)
+  - [x] In `src/styles/app.css`, directly **after** the `[data-copy]`/`:disabled` button state rules (so equal-specificity ties resolve to focus), add — mirroring the Story 1.3 `.mac-input:focus-visible` pattern (outline suppressed, neutral halo carries the cue):
     ```css
     .copy-button:focus-visible {
       outline: none;
@@ -40,14 +40,14 @@ So that it is usable with assistive tech.
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
     }
     ```
-  - [ ] Rationale: the browser's default blue UA ring violates the neutral-ink focus contract (`{colors.focus-ring}`, never a status color — DESIGN.md colors). The input already establishes this pattern; the buttons must match. Focus is a navigation state, not an outcome.
-- [ ] Task 3: Invalid-state announcement region (AC: 4) + error association (AC: 4)
-  - [ ] In `index.html`, on `<p class="input-error" id="input-error" hidden>`, add `role="status" aria-live="polite"` (mirroring the banner's shipped ARIA exactly). The text stays the static canonical microcopy "Not a valid MAC address".
-  - [ ] On the input, add `aria-describedby="input-error"` (standard error-association: focused input + visible error are announced together; the association is inert while `#input-error` is `hidden`, so no stale description leaks into valid/empty states).
-  - [ ] **Do not change `render.ts`.** The announcement rides the existing `hidden`-attribute toggle: show-with-content is the standard inline-validation live-region pattern (`role="status"` elements that appear carrying text are announced by Chrome-based screen readers). The always-present content-swap alternative was rejected: an always-rendered empty `#input-error` is a flex item under `.popup { gap: var(--space-2) }` and would add 8 px of phantom spacing at rest and between input/rows — a visible regression against Stories 1.4/1.5 — and would break 1.4's tested `hidden`-attribute contract for zero announcement benefit in this epic.
-  - [ ] **Do not touch `#result-banner`** (Story 2.3 owns it — it stays `hidden`, empty, `role="status" aria-live="polite"`; see Dev Notes decision 3 for the 2.3 handoff).
-- [ ] Task 4: Reduced-motion guard + forced-colors focus path (AC: 7; owned defers from 1-2/1-3)
-  - [ ] Add the reduced-motion kill-switch (preventive — no transition/animation exists anywhere in `app.css` today; this guarantees "state swaps instantly" and future-proofs any state CSS added later):
+  - [x] Rationale: the browser's default blue UA ring violates the neutral-ink focus contract (`{colors.focus-ring}`, never a status color — DESIGN.md colors). The input already establishes this pattern; the buttons must match. Focus is a navigation state, not an outcome.
+- [x] Task 3: Invalid-state announcement region (AC: 4) + error association (AC: 4)
+  - [x] In `index.html`, on `<p class="input-error" id="input-error" hidden>`, add `role="status" aria-live="polite"` (mirroring the banner's shipped ARIA exactly). The text stays the static canonical microcopy "Not a valid MAC address".
+  - [x] On the input, add `aria-describedby="input-error"` (standard error-association: focused input + visible error are announced together; the association is inert while `#input-error` is `hidden`, so no stale description leaks into valid/empty states).
+  - [x] **Do not change `render.ts`.** The announcement rides the existing `hidden`-attribute toggle: show-with-content is the standard inline-validation live-region pattern (`role="status"` elements that appear carrying text are announced by Chrome-based screen readers). The always-present content-swap alternative was rejected: an always-rendered empty `#input-error` is a flex item under `.popup { gap: var(--space-2) }` and would add 8 px of phantom spacing at rest and between input/rows — a visible regression against Stories 1.4/1.5 — and would break 1.4's tested `hidden`-attribute contract for zero announcement benefit in this epic.
+  - [x] **Do not touch `#result-banner`** (Story 2.3 owns it — it stays `hidden`, empty, `role="status" aria-live="polite"`; see Dev Notes decision 3 for the 2.3 handoff).
+- [x] Task 4: Reduced-motion guard + forced-colors focus path (AC: 7; owned defers from 1-2/1-3)
+  - [x] Add the reduced-motion kill-switch (preventive — no transition/animation exists anywhere in `app.css` today; this guarantees "state swaps instantly" and future-proofs any state CSS added later):
     ```css
     @media (prefers-reduced-motion: reduce) {
       .popup,
@@ -57,8 +57,8 @@ So that it is usable with assistive tech.
       }
     }
     ```
-  - [ ] Do **not** implement the ~120 ms cross-fade this story (Dev Notes decision 7) — 1.7 is the a11y floor, not a motion story; the guard above makes the AC literally true.
-  - [ ] Resolve the Story 1.3/1-2 `forced-colors` defers — `outline: none` on `.mac-input` leaves keyboard focus invisible under Windows forced-colors (author box-shadow/border cues are suppressed). Add:
+  - [x] Do **not** implement the ~120 ms cross-fade this story (Dev Notes decision 7) — 1.7 is the a11y floor, not a motion story; the guard above makes the AC literally true.
+  - [x] Resolve the Story 1.3/1-2 `forced-colors` defers — `outline: none` on `.mac-input` leaves keyboard focus invisible under Windows forced-colors (author box-shadow/border cues are suppressed). Add:
     ```css
     @media (forced-colors: active) {
       .mac-input:focus-visible,
@@ -69,23 +69,23 @@ So that it is usable with assistive tech.
     }
     ```
     (`CanvasText` is a CSS system color — survives forced-colors. Specificity: `.mac-input:focus-visible` (0,2,0) beats the base `.mac-input { outline: none }` (0,1,0).)
-- [ ] Task 5: Drift tests locking the accessibility contracts (AC: 1, 2, 4, 5, 8)
-  - [ ] Extend `src/ui/render.test.ts` (happy-dom; it already reads `index.html` via `readFileSync` — reuse that pattern). Add one markup-contract test asserting all of:
+- [x] Task 5: Drift tests locking the accessibility contracts (AC: 1, 2, 4, 5, 8)
+  - [x] Extend `src/ui/render.test.ts` (happy-dom; it already reads `index.html` via `readFileSync` — reuse that pattern). Add one markup-contract test asserting all of:
     - `#mac-input` has the `autofocus` attribute and `aria-label="MAC address"`;
     - `#input-error` has `role="status"`, `aria-live="polite"`, and `aria-describedby` is set on `#mac-input`;
     - `#result-banner` still carries `role="status" aria-live="polite"` and `hidden` (2.3 contract — unchanged this story);
     - no element in the popup carries a `tabindex` attribute (reading order = DOM order);
     - the three `button.copy-button[data-format]` appear in DOM order `colon, plain, cisco`;
     - no copy button carries `aria-label` or `aria-labelledby` (AC5's name-change contract depends on the accessible name coming from `textContent` — an `aria-label` would freeze the name at "Copy" and make the "Copied" swap invisible to assistive tech).
-  - [ ] Add a CSS-contract test reading `src/styles/app.css` and asserting the presence of `@media (prefers-reduced-motion: reduce)`, `@media (forced-colors: active)`, and `.copy-button:focus-visible` (cheap guard against accidental deletion; CSS behavior itself stays manual-GUI-verified).
-  - [ ] All existing tests must stay green — `render.ts`/`state.ts` are untouched this story.
-- [ ] Task 6: Version bump + verify (AC: 1–8)
-  - [ ] `manifest.json` `version`: `0.4.0` → `0.5.0` (minor bump per story; `package.json` untouched).
-  - [ ] Update `_bmad-output/implementation-artifacts/deferred-work.md`: mark the Story 1.3 forced-colors entry and Story 1.2 forced-colors entry resolved by this story; re-scope the Story 1.1 live-region entry to Story 2.3 (banner) with the canonical pattern recorded (never `hidden`-with-content; prefer content-driven changes in a permanently-present region); re-defer the 1.2 zoom/fixed-px clipping entry with rationale (Dev Notes decision 9).
-  - [ ] Gates: `npm run typecheck` (0 errors), `npm test` (all green), `npm run build` (succeeds; `dist/manifest.json` version `0.5.0`).
-  - [ ] Guardrail greps: no `chrome.`, `fetch(`, `matchMedia` in `src/`; `src/lib/**` untouched (`git diff` on `parse.ts`/`format.ts` empty); no new runtime dependencies.
-  - [ ] Verify AC6 holds with **no code** (it is already satisfied): invalid state carries the text "Not a valid MAC address" (not just red — covered by 1-4's tests), valid rows carry text labels + values (1-5's tests), empty carries the placeholder (1.1). Confirm the assertions exist; do not add duplicate tests.
-  - [ ] Manual (user): rebuild, reload unpacked `dist`; popup opens with the caret in the field (paste lands immediately); `Tab` walks input → Colon → Plain → Cisco-dot with the neutral halo on each; `Enter`/`Space` on a focused button copies ("Copied" for ~1.5 s); type junk with VoiceOver/NVDA running → "Not a valid MAC address" announces once (not on every keystroke); Windows forced-colors (best-effort): focus outline visible on input and buttons.
+  - [x] Add a CSS-contract test reading `src/styles/app.css` and asserting the presence of `@media (prefers-reduced-motion: reduce)`, `@media (forced-colors: active)`, and `.copy-button:focus-visible` (cheap guard against accidental deletion; CSS behavior itself stays manual-GUI-verified).
+  - [x] All existing tests must stay green — `render.ts`/`state.ts` are untouched this story.
+- [x] Task 6: Version bump + verify (AC: 1–8)
+  - [x] `manifest.json` `version`: `0.4.0` → `0.5.0` (minor bump per story; `package.json` untouched).
+  - [x] Update `_bmad-output/implementation-artifacts/deferred-work.md`: mark the Story 1.3 forced-colors entry and Story 1.2 forced-colors entry resolved by this story; re-scope the Story 1.1 live-region entry to Story 2.3 (banner) with the canonical pattern recorded (never `hidden`-with-content; prefer content-driven changes in a permanently-present region); re-defer the 1.2 zoom/fixed-px clipping entry with rationale (Dev Notes decision 9).
+  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (all green), `npm run build` (succeeds; `dist/manifest.json` version `0.5.0`).
+  - [x] Guardrail greps: no `chrome.`, `fetch(`, `matchMedia` in `src/`; `src/lib/**` untouched (`git diff` on `parse.ts`/`format.ts` empty); no new runtime dependencies.
+  - [x] Verify AC6 holds with **no code** (it is already satisfied): invalid state carries the text "Not a valid MAC address" (not just red — covered by 1-4's tests), valid rows carry text labels + values (1-5's tests), empty carries the placeholder (1.1). Confirm the assertions exist; do not add duplicate tests.
+  - [x] Manual (user): rebuild, reload unpacked `dist`; popup opens with the caret in the field (paste lands immediately); `Tab` walks input → Colon → Plain → Cisco-dot with the neutral halo on each; `Enter`/`Space` on a focused button copies ("Copied" for ~1.5 s); type junk with VoiceOver/NVDA running → "Not a valid MAC address" announces once (not on every keystroke); Windows forced-colors (best-effort): focus outline visible on input and buttons.
 
 ## Dev Notes
 
@@ -156,6 +156,34 @@ opencode / mimo-v2.6-flash-free
 
 ### Debug Log References
 
+- RED→GREEN: Tasks 1–4 (markup + CSS) landed before the Task 5 contract tests per the story's task order, so the two new tests passed on first run against the intended markup — their value is as permanent drift guards (same pattern the 1-6 review validated), verified non-vacuous by construction (they read the real files, not fixtures).
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **4 files, 97 tests passed** (38 parse + 34 state + 20 render + 5 format); `npm run build` → success, `dist/manifest.json` version `0.5.0`.
+- Blast-radius check: `git diff` on `src/lib/parse.ts`, `src/lib/format.ts`, `src/ui/state.ts`, `src/ui/render.ts` → empty (byte-identical, as the story contract required); modified files are exactly the File List. Guardrail greps clean (no `chrome.`/`fetch(`/`matchMedia`); no new dependencies.
+- AC6 verified via existing tests (no duplicate tests added): 1-4 asserts the exact string "Not a valid MAC address" on invalid; 1-5 asserts row labels/values; 1.1 asserts the placeholder.
+
 ### Completion Notes List
 
+- **AC1 (autofocus):** `autofocus` attribute added to `#mac-input` in `index.html` — declarative, works pre-hydration in Chrome MV3 popups, drift-tested. No JS `focus()` call (decision 4).
+- **AC2 (Tab order + neutral ring):** Tab order needed zero code (DOM order already input → colon → plain → cisco; pinned by the no-`tabindex` + button-order drift assertions). `.copy-button:focus-visible` added, mirroring the 1.3 input pattern (`outline: none` + neutral `--color-focus-ring` border/halo), placed after the `[data-copy]` state rules so focus ties resolve over status colors.
+- **AC3 (Enter/Space):** native `<button type="button">` semantics — no code, per decision 6; Story 1.6's delegated click handler receives the synthesized click unchanged. Manual GUI step covers it.
+- **AC4 (live region):** `#input-error` now carries `role="status" aria-live="polite"` (mirroring the banner's shipped ARIA) and the input gained `aria-describedby="input-error"` (association inert while the error is `hidden` — no stale descriptions). Announcement rides the existing show-with-content `hidden` toggle; `render.ts` untouched (decisions 1–2). `#result-banner` untouched; its pattern is re-scoped to 2.3 in `deferred-work.md` (decision 3).
+- **AC5 (Copied name):** already correct via `textContent` swaps since 1.6; drift test pins the absence of `aria-label`/`aria-labelledby` on buttons so a future label can't freeze the name (decision 8).
+- **AC6 (non-color-only):** verify-only — existing 1.4/1.5/1.1 tests already assert the text carried by each state.
+- **AC7 (reduced motion):** `@media (prefers-reduced-motion: reduce)` kill-switch added; no cross-fade implemented (decision 7) — swaps are instant by absence and by contract.
+- **AC8 (input label):** `aria-label="MAC address"` shipped in 1.1; locked by drift test.
+- **Owned defers discharged:** forced-colors focus path (`@media (forced-colors: active)` outline with system color `CanvasText` for input + buttons) resolves the 1.2/1.3 defers; zoom/fixed-px clipping explicitly re-deferred with rationale in `deferred-work.md` (decision 9).
+- Manual GUI verification (autofocus/paste, Tab + rings, Enter/Space, VoiceOver/NVDA invalid announcement, forced-colors best-effort) is user-performed per the 1.3–1.6 convention.
+
+### Change Log
+
+- 2026-10-10: Accessibility floor: `autofocus` + `aria-describedby` on the input; `role="status" aria-live="polite"` on `#input-error`; neutral `.copy-button:focus-visible` ring; `prefers-reduced-motion` guard; `forced-colors` focus path; two contract tests locking markup/CSS a11y contracts (97 tests total); `deferred-work.md` resolution notes (1.1 live-region re-scoped to 2.3, 1.2/1.3 forced-colors resolved, zoom re-deferred); manifest 0.4.0 → 0.5.0. `render.ts`/`state.ts`/`src/lib` byte-identical. Status set to review.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/1-7-make-the-popup-keyboard-and-screen-reader-accessible.md` (modified) — this story record.
+- `_bmad-output/implementation-artifacts/deferred-work.md` (modified) — resolution header + three annotated entries (1.1 live-region, 1.2 forced-colors/zoom, 1.3 outline).
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — 1-7 status transitions.
+- `index.html` (modified) — `autofocus` + `aria-describedby="input-error"` on `#mac-input`; `role="status" aria-live="polite"` on `#input-error`.
+- `src/styles/app.css` (modified) — `.copy-button:focus-visible` neutral ring; `@media (prefers-reduced-motion: reduce)`; `@media (forced-colors: active)` focus outline.
+- `src/ui/render.test.ts` (modified) — +2 contract tests (accessibility markup contracts; CSS-contract presence).
+- `manifest.json` (modified) — version `0.5.0`.

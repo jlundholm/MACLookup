@@ -19,8 +19,10 @@
         autocorrect="off"
         spellcheck="false"
         aria-label="MAC address"
+        aria-describedby="input-error"
+        autofocus
       />
-      <p class="input-error" id="input-error" hidden>Not a valid MAC address</p>
+      <p class="input-error" id="input-error" role="status" aria-live="polite" hidden>Not a valid MAC address</p>
       <div
         class="result-banner"
         id="result-banner"

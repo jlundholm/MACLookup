@@ -224,4 +224,38 @@ describe('render', () => {
       expect(btn?.textContent).toBe('Copy');
     }
   });
+
+  it('index.html carries the accessibility contracts (Story 1.7)', () => {
+    const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    const input = host.querySelector<HTMLInputElement>('#mac-input');
+    expect(input).not.toBeNull();
+    expect(input?.hasAttribute('autofocus')).toBe(true);
+    expect(input?.getAttribute('aria-label')).toBe('MAC address');
+    expect(input?.getAttribute('aria-describedby')).toBe('input-error');
+    const error = host.querySelector<HTMLElement>('#input-error');
+    expect(error).not.toBeNull();
+    expect(error?.getAttribute('role')).toBe('status');
+    expect(error?.getAttribute('aria-live')).toBe('polite');
+    const banner = host.querySelector<HTMLElement>('#result-banner');
+    expect(banner).not.toBeNull();
+    expect(banner?.getAttribute('role')).toBe('status');
+    expect(banner?.getAttribute('aria-live')).toBe('polite');
+    expect(banner?.hasAttribute('hidden')).toBe(true);
+    expect(host.querySelector('[tabindex]')).toBeNull();
+    const btns = Array.from(host.querySelectorAll<HTMLButtonElement>('button.copy-button[data-format]'));
+    expect(btns.map((b) => b.dataset.format)).toEqual(['colon', 'plain', 'cisco']);
+    for (const btn of btns) {
+      expect(btn.hasAttribute('aria-label')).toBe(false);
+      expect(btn.hasAttribute('aria-labelledby')).toBe(false);
+    }
+  });
+
+  it('app.css carries the Story 1.7 accessibility rules', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles/app.css'), 'utf8');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('@media (forced-colors: active)');
+    expect(css).toContain('.copy-button:focus-visible');
+  });
 });

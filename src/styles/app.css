@@ -221,6 +221,15 @@ body {
   cursor: default;
 }
 
+/* Story 1.7 — neutral focus ring, mirroring the .mac-input:focus-visible
+   pattern. Placed after the [data-copy] state rules so equal-specificity
+   ties resolve to focus (focus is a navigation state, never a status color). */
+.copy-button:focus-visible {
+  outline: none;
+  border-color: var(--color-focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);
+}
+
 /* Invalid input state (Story 1.4) — colors driven only by data-status on the popup root.
    Higher specificity than .mac-input:focus-visible so the red border survives while typing;
    the neutral focus halo (box-shadow) still renders. */
@@ -287,4 +296,28 @@ body {
 
 .popup[data-status='valid'] .format-row .readout {
   color: var(--color-text);
+}
+
+/* Story 1.7 — accessibility floor.
+   Reduced motion: no transition/animation exists today; this is a preventive
+   kill-switch so state swaps stay instant under prefers-reduced-motion and any
+   future state CSS cannot reintroduce the ~120 ms cross-fade without it. */
+@media (prefers-reduced-motion: reduce) {
+  .popup,
+  .popup * {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Story 1.7 — Windows forced-colors focus path (resolves the Story 1.2/1.3
+   defers): author box-shadow/border focus cues are suppressed in forced-colors,
+   and .mac-input's base `outline: none` would leave focus invisible. CanvasText
+   is a CSS system color and survives forced-colors. */
+@media (forced-colors: active) {
+  .mac-input:focus-visible,
+  .copy-button:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
 }
