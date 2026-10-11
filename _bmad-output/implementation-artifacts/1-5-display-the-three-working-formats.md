@@ -210,7 +210,8 @@ opencode / mimo-v2.6-flash-free
 ### Debug Log References
 
 - RED→GREEN per task: `format.test.ts` first (failed on missing `./format`), then `format.ts` → 5 tests pass. `render.test.ts` row-fill tests failed first (3 failed / 7 passed), then `render.ts` extension → 10 tests pass.
-- Final gates: `npm run typecheck` → 0 errors; `npm test` → **4 files, 79 tests passed** (38 parse + 26 state + 10 render + 5 format); `npm run build` → success, `dist/manifest.json` version `0.3.0`.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **4 files, 81 tests passed** (38 parse + 26 state + 12 render + 5 format); `npm run build` → success, `dist/manifest.json` version `0.3.0`.
+- Post-review patching (this review): +2 net tests — `writes a dash for a row whose data-format is not a Formats key` and the index.html `format rows match what render fills` drift guard → 81 total.
 - Guardrails: `grep` over `src/` → no `chrome.`, `fetch(`, `matchMedia`; `src/lib/format.ts` imports only a type; `parse.ts`/`parse.test.ts` untouched; only version change is `manifest.json` (not `package.json`).
 
 ### Completion Notes List
@@ -228,6 +229,7 @@ opencode / mimo-v2.6-flash-free
 ### Change Log
 
 - 2026-10-10: Implemented the pure `formats(canonical)` slicer (`src/lib/format.ts` + test) and filled the three format rows in `render`; added row markup (labels + readout spans) and row CSS (field bg, 1px border, rounded.md, 4px status rail keyed on interim valid/invalid, selectable text); manifest bumped to 0.3.0; status set to review.
+- 2026-10-10: Code review (Blind Hunter + Edge Case Hunter + Acceptance Auditor, 3 layers, commit `f47f258`). 26 raw → 14 unique; 0 decision-needed, 5 patch, 1 defer, 8 dismissed. Patches applied: readout base color now muted with `.popup[data-status='valid']` override (dead `:empty` rule removed — AC4 fix, render always writes a text node); row loop scoped to `#format-rows` and unknown `data-format` now renders `—` instead of `""` (`f[which] ?? DASH`); index.html drift test extended to per-row markup + new unknown-format render test; `format.test.ts` switched from self-derived `.match(/.{2}/g)` expectations to literal `toEqual`. Deferred: neutral 4px rail color for post-`found`/`miss` statuses → 2.3 re-points. Gates after patches: typecheck 0, 81 tests, build OK.
 
 ### File List
 

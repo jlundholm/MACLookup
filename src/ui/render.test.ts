@@ -120,10 +120,36 @@ describe('render', () => {
     for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
+  it('writes a dash for a row whose data-format is not a Formats key', () => {
+    document.body.innerHTML = `
+      <main id="popup">
+        <div class="format-rows" id="format-rows">
+          <div class="format-row" data-format="hyphen"><span class="readout"></span></div>
+        </div>
+      </main>
+    `;
+    const rootEl = document.getElementById('popup') as HTMLElement;
+    render(rootEl, VALID);
+    expect(rootEl.querySelector<HTMLElement>('#format-rows .readout')?.textContent).toBe('—');
+  });
+
   it('index.html contains every id the renderer wires', () => {
     const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
     for (const id of ['popup', 'mac-input', 'input-error', 'format-rows', 'result-banner']) {
       expect(html).toContain(`id="${id}"`);
+    }
+  });
+
+  it('index.html format rows match what render fills', () => {
+    const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    const rows = Array.from(host.querySelectorAll<HTMLElement>('.format-row'));
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(['colon', 'plain', 'cisco']).toContain(row.dataset.format);
+      expect(row.querySelector('.field-label')).not.toBeNull();
+      expect(row.querySelector('.readout')).not.toBeNull();
     }
   });
 });

@@ -229,10 +229,12 @@ body {
   color: var(--color-text-muted);
 }
 
+/* Readout is muted by default (dash/empty), text-colored only on a valid parse —
+   render always writes a text node, so :empty can never match. */
 .format-row .readout {
-  color: var(--color-text);
+  color: var(--color-text-muted);
 }
 
-.format-row .readout:empty {
-  color: var(--color-text-muted);
+.popup[data-status='valid'] .format-row .readout {
+  color: var(--color-text);
 }

@@ -1,4 +1,4 @@
-import type { PopupState } from '../lib/types';
+import type { Formats, PopupState } from '../lib/types';
 import { formats } from '../lib/format';
 
 const DASH = '—';
@@ -11,11 +11,12 @@ export function render(root: HTMLElement, state: PopupState): void {
   if (rows) rows.hidden = state.status === 'empty';
 
   const f = state.canonical ? formats(state.canonical) : null;
-  for (const row of Array.from(root.querySelectorAll<HTMLElement>('.format-row'))) {
+  const rowEls = rows ? Array.from(rows.querySelectorAll<HTMLElement>('.format-row')) : [];
+  for (const row of rowEls) {
     const out = row.querySelector<HTMLElement>('.readout');
-    const which = row.dataset.format as 'colon' | 'plain' | 'cisco' | undefined;
-    if (!out || !which) continue;
-    out.textContent = f ? f[which] : DASH;
+    const which = row.dataset.format as keyof Formats | undefined;
+    if (!out) continue;
+    out.textContent = f && which ? f[which] ?? DASH : DASH;
   }
 
   root.dataset.status = state.status;
