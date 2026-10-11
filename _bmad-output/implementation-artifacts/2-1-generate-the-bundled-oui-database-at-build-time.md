@@ -4,7 +4,7 @@ baseline_commit: c5dab794455dcb42db5b3f486dbfd3e2d592d408
 
 # Story 2.1: Generate the bundled OUI database at build time
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,23 +25,23 @@ So that vendor lookup is offline, deterministic, and refreshable without any run
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the `build:data` runner and script scaffold (AC: 1)
-  - [ ] Add `tsx` and `@types/node` to `devDependencies`; add `"build:data": "tsx scripts/build-oui-data.ts"` to `package.json` scripts. `tsx` is required because this environment's Node (v22.22.1) is **not compiled with TypeScript support** (`node scripts/foo.ts` → `ERR_NO_TYPESCRIPT`), and no `tsx`/`esbuild`/`vite-node` is present in the tree. Build-time-only; never bundled; the privacy guard excludes `scripts/` and `node_modules/` (1-8 decisions 1 & patch), so the IEEE `https://` URLs below do not trip the runtime scan. See Critical Decision 1.
-  - [ ] Create `scripts/build-oui-data.ts` exporting pure functions (`parseCsvLine`, `normalizePrefix`, `buildDataset`, …) plus an **entrypoint-guarded** `main()` (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) so importing the module for tests never triggers a download.
-  - [ ] Import Node built-ins explicitly (`node:fs`, `node:path`, `node:url`); no enums/namespaces/parameter-properties (`erasableSyntaxOnly`); use `import type` where needed (`verbatimModuleSyntax`).
-- [ ] Task 2: Download + RFC4180 parse the three CSVs (AC: 1)
-  - [ ] Fetch (global `fetch`, Node 18+) the three sources — all verified HTTP 200 this story:
+- [x] Task 1: Add the `build:data` runner and script scaffold (AC: 1)
+  - [x] Add `tsx` and `@types/node` to `devDependencies`; add `"build:data": "tsx scripts/build-oui-data.ts"` to `package.json` scripts. `tsx` is required because this environment's Node (v22.22.1) is **not compiled with TypeScript support** (`node scripts/foo.ts` → `ERR_NO_TYPESCRIPT`), and no `tsx`/`esbuild`/`vite-node` is present in the tree. Build-time-only; never bundled; the privacy guard excludes `scripts/` and `node_modules/` (1-8 decisions 1 & patch), so the IEEE `https://` URLs below do not trip the runtime scan. See Critical Decision 1.
+  - [x] Create `scripts/build-oui-data.ts` exporting pure functions (`parseCsvLine`, `normalizePrefix`, `buildDataset`, …) plus an **entrypoint-guarded** `main()` (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) so importing the module for tests never triggers a download.
+  - [x] Import Node built-ins explicitly (`node:fs`, `node:path`, `node:url`); no enums/namespaces/parameter-properties (`erasableSyntaxOnly`); use `import type` where needed (`verbatimModuleSyntax`).
+- [x] Task 2: Download + RFC4180 parse the three CSVs (AC: 1)
+  - [x] Fetch (global `fetch`, Node 18+) the three sources — all verified HTTP 200 this story:
     - MA-L → `oui.csv` → `https://standards-oui.ieee.org/oui/oui.csv`
     - MA-M → `mam.csv` → `https://standards-oui.ieee.org/oui28/mam.csv`
     - MA-S → `oui36.csv` → `https://standards-oui.ieee.org/oui36/oui36.csv`
-  - [ ] Strip a leading UTF-8 BOM; handle CRLF and LF. Parse per line with a **quote-aware splitter** (no CSV dependency): a field wrapped in `"` may contain commas, and `""` is a literal quote. Verified shape: `MA-L,286FB9,"Nokia Shanghai Bell Co., Ltd.","No.388 Ning Qiao Road,…"`. Fields in these CSVs are single-line (no embedded newlines), so line-splitting is safe; a line with unbalanced quotes is skipped and counted.
-  - [ ] Read columns **by header index** (`Registry,Assignment,Organization Name,Organization Address`), not by fixed position. Extract only Assignment + Organization Name.
-  - [ ] Defensive: skip rows with empty Assignment or empty Organization Name; tally skips and report.
-- [ ] Task 3: Normalize keys, route registry, build `entries` + `counts` (AC: 2, 3)
-  - [ ] `normalizePrefix`: trim Assignment → uppercase → validate `/^[0-9A-F]+$/` and length ∈ {6, 7, 9}. **Length is authoritative** for routing (AC3): 6 → `l24`/MA-L, 7 → `m28`/MA-M, 9 → `s36`/MA-S. The CSV `Registry` column is a defensive cross-check only (MA-L=6, MA-M=7, MA-S=9); on mismatch trust the length and log.
-  - [ ] Vendor = Organization Name **trimmed, verbatim** — do **not** uppercase or reformat vendor names (only the prefix key is uppercased; "Apple, Inc." stays exactly as written). Skip empty vendors.
-  - [ ] Build the flat `entries` object inserting keys in **ascending sorted order** so the serialized artifact is canonical and independent of CSV row order. (JS engines hoist integer-like keys — an all-digit prefix like `123456` — ahead of letter-bearing keys; sorting makes the output deterministic regardless of insertion order.) See Critical Decision 4.
-  - [ ] Assemble the pinned top-level shape (exact key names — Story 2.2 builds Maps named `l24`/`m28`/`s36` off `counts`):
+  - [x] Strip a leading UTF-8 BOM; handle CRLF and LF. Parse per line with a **quote-aware splitter** (no CSV dependency): a field wrapped in `"` may contain commas, and `""` is a literal quote. Verified shape: `MA-L,286FB9,"Nokia Shanghai Bell Co., Ltd.","No.388 Ning Qiao Road,…"`. Fields in these CSVs are single-line (no embedded newlines), so line-splitting is safe; a line with unbalanced quotes is skipped and counted.
+  - [x] Read columns **by header index** (`Registry,Assignment,Organization Name,Organization Address`), not by fixed position. Extract only Assignment + Organization Name.
+  - [x] Defensive: skip rows with empty Assignment or empty Organization Name; tally skips and report.
+- [x] Task 3: Normalize keys, route registry, build `entries` + `counts` (AC: 2, 3)
+  - [x] `normalizePrefix`: trim Assignment → uppercase → validate `/^[0-9A-F]+$/` and length ∈ {6, 7, 9}. **Length is authoritative** for routing (AC3): 6 → `l24`/MA-L, 7 → `m28`/MA-M, 9 → `s36`/MA-S. The CSV `Registry` column is a defensive cross-check only (MA-L=6, MA-M=7, MA-S=9); on mismatch trust the length and log.
+  - [x] Vendor = Organization Name **trimmed, verbatim** — do **not** uppercase or reformat vendor names (only the prefix key is uppercased; "Apple, Inc." stays exactly as written). Skip empty vendors.
+  - [x] Build the flat `entries` object inserting keys in **ascending sorted order** so the serialized artifact is canonical and independent of CSV row order. (JS engines hoist integer-like keys — an all-digit prefix like `123456` — ahead of letter-bearing keys; sorting makes the output deterministic regardless of insertion order.) See Critical Decision 4.
+  - [x] Assemble the pinned top-level shape (exact key names — Story 2.2 builds Maps named `l24`/`m28`/`s36` off `counts`):
     ```json
     {
       "schemaVersion": 1,
@@ -52,23 +52,23 @@ So that vendor lookup is offline, deterministic, and refreshable without any run
     }
     ```
     `counts.l24/m28/s36` = number of entries in each bucket; their sum must equal `Object.keys(entries).length`. `sources` stores the **filename**, not the URL.
-- [ ] Task 4: Emit, verify determinism + size, wire the dist copy (AC: 4, 5)
-  - [ ] Write `public/oui-data.json` (`writeFileSync`, `JSON.stringify` with the sorted-keys object). `public/` already exists (holds `icons/`).
-  - [ ] Determinism: run the build twice against the same fixture/input and confirm `entries` and `counts` are deep-equal (`generatedAt` is excluded from the comparison — it is a run timestamp). See Critical Decision 4.
-  - [ ] Measure **raw + gzipped** byte size of the JSON; record both in the story. Confirm within NFR5 (DB ≤ ~2 MB compressed; total package ≤ ~3 MB). Architecture estimates 0.6–0.8 MB raw, so expect large headroom. See Critical Decision 6.
-  - [ ] Run `npm run build`; verify `dist/oui-data.json` exists and is **byte-identical** to `public/oui-data.json` (Vite `publicDir` copy). If CRXJS does not copy it, handle explicitly and note it — AC5 requires the verbatim dist copy. Confirm the JSON is *copied*, never imported/bundled by Vite.
-- [ ] Task 5: Tests (AC: 2, 3, 4)
-  - [ ] Create `tests/build-oui-data.test.ts` (Node env; **no** happy-dom pragma — pure string/object logic). Import the pure functions from `../scripts/build-oui-data.ts`; the entrypoint guard (Task 1) guarantees no download on import.
-  - [ ] Inline CSV **fixtures** inside the test file (never committed "bad" files): a quoted org name with an embedded comma; an escaped quote (`""`); CRLF; a leading BOM; an all-numeric prefix vs. a letter-bearing prefix (sorted-insertion / integer-key check); a wrong-length Assignment (skipped); an empty vendor (skipped). Assert: uppercase keys, correct length→bucket routing, verbatim vendor casing, `counts` sum == entries size.
-  - [ ] Determinism test: build twice from the same fixture → `entries` and `counts` deep-equal.
-  - [ ] **Committed-artifact structural test**: `readFileSync(resolve(process.cwd(), 'public/oui-data.json'))` + `JSON.parse` (the established `render.test.ts`/`privacy.guard.test.ts` convention). Assert `schemaVersion === 1`; `generatedAt` parses as a valid ISO-8601 UTC string; `sources` has exactly `ma-l`/`ma-m`/`ma-s`; `counts.l24 + m28 + s36 === Object.keys(entries).length`; every key matches `/^[0-9A-F]{6,7,9}$/` and lands in the bucket its length implies. **Pinned vendor lookups (e.g. `F01898` → "Apple, Inc.") are Story 2.2's `lookup.test.ts`, not here** — this story proves shape and parse integrity only.
-  - [ ] Note for the dev agent: the `https://` IEEE URLs live **only** in `scripts/`, which the privacy guard (1-8) excludes from its `src/` scan — no conflict; do not move them into `src/`.
-- [ ] Task 6: Commit the artifact, version bump, gates (AC: 1–6)
-  - [ ] **Commit `public/oui-data.json`** (Critical Decision 5) so `npm run build` ships a working, offline extension without re-running `build:data`; the committed-artifact test (Task 5) guards against a missing/stale/corrupt file.
-  - [ ] `manifest.json` `version`: `0.6.0` → `0.7.0` (minor bump per story; `package.json` `version` untouched).
-  - [ ] Gates: `npm run typecheck` (0 errors), `npm test` (existing 118 + the new file, all green), `npm run build` (succeeds; `dist/oui-data.json` present and byte-identical to `public/`).
-  - [ ] Guardrail greps: no changes under `src/**`; no runtime `fetch`/update path added anywhere in `src/` (AC6); `dist/` size within budget.
-  - [ ] Record the raw + gzipped sizes and the MA-L/MA-M/MA-S entry counts in the story's Completion Notes.
+- [x] Task 4: Emit, verify determinism + size, wire the dist copy (AC: 4, 5)
+  - [x] Write `public/oui-data.json` (`writeFileSync`, `JSON.stringify` with the sorted-keys object). `public/` already exists (holds `icons/`).
+  - [x] Determinism: run the build twice against the same fixture/input and confirm `entries` and `counts` are deep-equal (`generatedAt` is excluded from the comparison — it is a run timestamp). See Critical Decision 4.
+  - [x] Measure **raw + gzipped** byte size of the JSON; record both in the story. Confirm within NFR5 (DB ≤ ~2 MB compressed; total package ≤ ~3 MB). Architecture estimates 0.6–0.8 MB raw, so expect large headroom. See Critical Decision 6.
+  - [x] Run `npm run build`; verify `dist/oui-data.json` exists and is **byte-identical** to `public/oui-data.json` (Vite `publicDir` copy). If CRXJS does not copy it, handle explicitly and note it — AC5 requires the verbatim dist copy. Confirm the JSON is *copied*, never imported/bundled by Vite.
+- [x] Task 5: Tests (AC: 2, 3, 4)
+  - [x] Create `tests/build-oui-data.test.ts` (Node env; **no** happy-dom pragma — pure string/object logic). Import the pure functions from `../scripts/build-oui-data.ts`; the entrypoint guard (Task 1) guarantees no download on import.
+  - [x] Inline CSV **fixtures** inside the test file (never committed "bad" files): a quoted org name with an embedded comma; an escaped quote (`""`); CRLF; a leading BOM; an all-numeric prefix vs. a letter-bearing prefix (sorted-insertion / integer-key check); a wrong-length Assignment (skipped); an empty vendor (skipped). Assert: uppercase keys, correct length→bucket routing, verbatim vendor casing, `counts` sum == entries size.
+  - [x] Determinism test: build twice from the same fixture → `entries` and `counts` deep-equal.
+  - [x] **Committed-artifact structural test**: `readFileSync(resolve(process.cwd(), 'public/oui-data.json'))` + `JSON.parse` (the established `render.test.ts`/`privacy.guard.test.ts` convention). Assert `schemaVersion === 1`; `generatedAt` parses as a valid ISO-8601 UTC string; `sources` has exactly `ma-l`/`ma-m`/`ma-s`; `counts.l24 + m28 + s36 === Object.keys(entries).length`; every key matches `/^[0-9A-F]{6,7,9}$/` and lands in the bucket its length implies. **Pinned vendor lookups (e.g. `F01898` → "Apple, Inc.") are Story 2.2's `lookup.test.ts`, not here** — this story proves shape and parse integrity only.
+  - [x] Note for the dev agent: the `https://` IEEE URLs live **only** in `scripts/`, which the privacy guard (1-8) excludes from its `src/` scan — no conflict; do not move them into `src/`.
+- [x] Task 6: Commit the artifact, version bump, gates (AC: 1–6)
+  - [x] **Commit `public/oui-data.json`** (Critical Decision 5) so `npm run build` ships a working, offline extension without re-running `build:data`; the committed-artifact test (Task 5) guards against a missing/stale/corrupt file.
+  - [x] `manifest.json` `version`: `0.6.0` → `0.7.0` (minor bump per story; `package.json` `version` untouched).
+  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (existing 118 + the new file, all green), `npm run build` (succeeds; `dist/oui-data.json` present and byte-identical to `public/`).
+  - [x] Guardrail greps: no changes under `src/**`; no runtime `fetch`/update path added anywhere in `src/` (AC6); `dist/` size within budget.
+  - [x] Record the raw + gzipped sizes and the MA-L/MA-M/MA-S entry counts in the story's Completion Notes.
 
 ## Dev Notes
 
@@ -142,9 +142,37 @@ opencode / mimo-v2.6-flash-free
 
 ### Debug Log References
 
+- RED phase: wrote `tests/build-oui-data.test.ts` first (21 tests, inline CSV fixtures) and confirmed it failed with `Cannot find module '../scripts/build-oui-data'` before implementing — validates the tests are real, not vacuous.
+- GREEN phase: implemented `scripts/build-oui-data.ts`. First test run surfaced two issues, both test bugs, not implementation bugs:
+  1. The sorted-key fixture used `ZZZZZZ` as a "letter-bearing" prefix — `Z` is not a hex digit, so `normalizePrefix` correctly rejected it (286FB9 only, missing FFFFFF). Fixed the fixture to use a valid hex key `FFFFFF`.
+  2. The committed-artifact test called `expect()` per key inside a loop over ~54k keys — each `expect` has overhead, so the test exceeded Vitest's 5s default timeout. Rewrote to collect violations in a plain loop and assert once at the end (`badKeys`/`badValues` arrays). Test dropped from >5s (timeout) to ~160ms.
+- Initial implementation carried two dead-code artifacts caught on self-review before the first run: a `require('node:zlib')` inside an ESM module (would fail under tsx; replaced with a top-level `import { gzipSync } from 'node:zlib'`) and an unused `fileURLToPath` import with a `void` silence at the bottom of the file (removed both).
+- `npm run build:data` (live IEEE download, all three registries): `entries=54170 (l24=40316 m28=6628 s36=7226)`, raw **1.81 MB**, gzip **0.56 MB** — both well under the NFR5 budget (DB ≤ ~2 MB compressed).
+- Determinism (Task 4, real artifact): snapshotted `{schemaVersion, sources, counts, entries}` (everything except `generatedAt`), re-ran `npm run build:data`, re-snapshotted, `diff` → identical. Confirms same-CSVs ⇒ identical entries/counts; only the timestamp moves.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **6 files, 139 tests passed** (118 existing + 21 new); `npm run build` → success; `dist/oui-data.json` present and **byte-identical** to `public/oui-data.json` (`cmp` clean); `dist/manifest.json` version `0.7.0`. Package size: dist = 1.9 MB uncompressed / 616 KB gzipped — within the ~3 MB total-package NFR5 budget.
+- Blast-radius: `git status` shows no changes under `src/**` (privacy guard unaffected — it scans `src/` only, and the IEEE URLs live in `scripts/`, which 1-8 decision 1 excludes). `package.json` `version` untouched (manifest-only bumps). New devDependencies are build-time/types-only (`tsx`, `@types/node`) and are never bundled.
+
 ### Completion Notes List
+
+- **AC1 (build:data downloads + extracts):** `scripts/build-oui-data.ts` fetches the three IEEE CSVs (MA-L `oui.csv`, MA-M `mam.csv`, MA-S `oui36.csv` — all HTTP 200 verified) via global `fetch`, parses each with a hand-rolled RFC4180 quote-aware splitter (handles quoted fields with embedded commas, `""` escapes, CRLF/LF, leading BOM), and extracts Assignment → Organization Name by header index. `npm run build:data` wired in `package.json` via `tsx` (this Node build lacks native TS stripping — `ERR_NO_TYPESCRIPT`).
+- **AC2 (pinned schema shape):** artifact has `schemaVersion` (1), `generatedAt` (ISO-8601 UTC), `sources` (registry → filename), `counts` (`l24`/`m28`/`s36`), and `entries` — a flat object with uppercase 6/7/9-hex keys and vendor names verbatim from source (only the key is uppercased; "Apple, Inc." / "Nokia Shanghai Bell Co., Ltd." keep exact casing and punctuation). Counts sum verified equal to `Object.keys(entries).length` (54,170 total).
+- **AC3 (length routes registry):** key length is authoritative — 6 → `l24`/MA-L, 7 → `m28`/MA-M, 9 → `s36`/MA-S. No registry letter in the key; all hex uppercase. The CSV `Registry` column is a defensive cross-check only; on mismatch the length wins (tested with an `MA-M`-labeled row carrying a 6-hex assignment → routed to `l24`).
+- **AC4 (deterministic):** entry keys inserted in ascending sorted order, so the serialized artifact is canonical and immune to CSV row reordering and to JS engines hoisting integer-like keys. Verified against the live artifact: two consecutive `npm run build:data` runs produced byte-identical `{schemaVersion, sources, counts, entries}` (timestamp excluded by design).
+- **AC5 (emitted + copied + within budget):** `public/oui-data.json` written by the script; Vite's `publicDir` copies it verbatim to `dist/oui-data.json` on `npm run build` (`cmp` byte-identical; never imported/bundled). Sizes recorded: raw **1.81 MB**, gzip **0.56 MB** (DB ≤ ~2 MB compressed ✓); dist total 1.9 MB uncompressed / 616 KB gzipped (total package ≤ ~3 MB ✓).
+- **AC6 (no runtime update path):** the script lives in `scripts/` (outside `src/`), so nothing in the runtime bundle can fetch or refresh the dataset — it is only regenerated by running `build:data`. The Story 1-8 privacy guard already forbids network APIs and remote URL literals in `src/`, so no runtime updater can be introduced without failing the existing gate.
+- **Test-suite separation:** pinned vendor lookups (`F01898` → "Apple, Inc.") intentionally left to Story 2.2's `lookup.test.ts`; this story's committed-artifact test proves shape, key format, and counts-consistency only, so 2.1 fails solely on generation defects.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/2-1-generate-the-bundled-oui-database-at-build-time.md` (new) — this story record.
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — 2-1 → ready-for-dev; epic-2 → in-progress.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — 2-1 → in-progress → review; epic-2 → in-progress.
+- `scripts/build-oui-data.ts` (new) — Node OUI generator (pure `parseCsv`/`normalizePrefix`/`buildDataset`/`measureSizes` + entrypoint-guarded `main()`).
+- `tests/build-oui-data.test.ts` (new) — 21 tests: CSV parsing (quoted commas, escaped quotes, CRLF, BOM, malformed-line skip), prefix normalization, bucket routing, verbatim vendors, sorted/canonical keys, determinism, committed-artifact structural checks.
+- `public/oui-data.json` (new, committed) — generated name-only index, 54,170 entries (l24=40,316 / m28=6,628 / s36=7,226), schemaVersion 1.
+- `package.json` (modified) — added `"build:data": "tsx scripts/build-oui-data.ts"`; devDependencies += `tsx`, `@types/node`.
+- `package-lock.json` (modified) — lockfile update for the two new devDependencies.
+- `manifest.json` (modified) — version `0.6.0` → `0.7.0`.
+
+### Change Log
+
+- 2026-10-11: Story 2.1 implementation — added `scripts/build-oui-data.ts` (downloads IEEE MA-L/MA-M/MA-S CSVs at build time, RFC4180-parses them, emits `public/oui-data.json` with the pinned schema: `schemaVersion`/`generatedAt`/`sources`/`counts`/`entries`, uppercase 6/7/9-hex keys routed by length, verbatim vendor names, sorted canonical key order); added `tests/build-oui-data.test.ts` (21 tests: parse/normalize/route/determinism + committed-artifact structural validation); wired `npm run build:data` via `tsx` (this Node build lacks native TS stripping); committed the generated artifact (54,170 entries, raw 1.81 MB / gzip 0.56 MB, within NFR5); manifest `0.6.0` → `0.7.0`. No `src/` changes. Gates: typecheck 0, 139 tests green, build OK, `dist/oui-data.json` byte-identical to `public/`.

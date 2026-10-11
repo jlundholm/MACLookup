@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:data": "tsx scripts/build-oui-data.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -14,8 +15,10 @@
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",
+    "@types/node": "^26.6.5",
     "chrome-types": "^0.1.454",
     "happy-dom": "^20.14.6",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^4.1.11"
