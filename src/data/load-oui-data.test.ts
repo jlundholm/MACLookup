@@ -101,6 +101,39 @@ describe('loadOuiIndex', () => {
     expect(warn).toHaveBeenCalled();
   });
 
+  it('skips (and warns about) keys that are not uppercase hex', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    stubFetchWith(
+      payloadOf({ l24: 1, m28: 0, s36: 0 }, { AABBCC: 'Upper', aabbcc: 'Lower' }),
+    );
+
+    const index = await loadOuiIndex();
+
+    expect(index.l24.size).toBe(1);
+    expect(index.l24.get('AABBCC')).toBe('Upper');
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('skips (and warns about) entries whose value is not a string', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    stubFetchWith(
+      JSON.stringify({
+        schemaVersion: 1,
+        generatedAt: '2026-10-11T00:00:00.000Z',
+        sources: { 'ma-l': 'oui.csv', 'ma-m': 'mam.csv', 'ma-s': 'oui36.csv' },
+        counts: { l24: 0, m28: 0, s36: 0 },
+        entries: { AABBCC: 42, DDEEFF: 'Real Vendor' },
+      }),
+    );
+
+    const index = await loadOuiIndex();
+
+    expect(index.l24.get('AABBCC')).toBeUndefined();
+    expect(index.l24.get('DDEEFF')).toBe('Real Vendor');
+    expect(index.l24.size).toBe(1);
+    expect(warn).toHaveBeenCalled();
+  });
+
   it('rejects on a non-ok response', async () => {
     stubFetchWith('not found', { status: 404, statusText: 'Not Found' });
 
@@ -127,6 +160,12 @@ describe('loadOuiIndex', () => {
 
   it('rejects when entries is missing', async () => {
     stubFetchWith(JSON.stringify({ schemaVersion: 1 }));
+
+    await expect(loadOuiIndex()).rejects.toThrow();
+  });
+
+  it('rejects when entries is an empty object', async () => {
+    stubFetchWith(payloadOf({ l24: 0, m28: 0, s36: 0 }, {}));
 
     await expect(loadOuiIndex()).rejects.toThrow();
   });

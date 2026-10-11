@@ -4,7 +4,7 @@ baseline_commit: e78dfd74b6eeeeb61bbb0c615ee86ebac55e6cf2
 
 # Story 2.2: Load the dataset and resolve the vendor with longest-prefix match
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -77,6 +77,15 @@ So that I know the manufacturer without any network request.
   - [x] Guardrail greps: the **only** `fetch` in `src/` is the inline `chrome.runtime.getURL` call; no outbound URL literal anywhere in `src/`; no `chrome.storage`, no permissions, no background/content-script additions (`tests/privacy.guard.test.ts` enforces all of this — keep it green).
   - [x] Record the pinned fixture values, the measured build time, and the manual paste-latency observation in Completion Notes.
 
+### Review Findings
+
+- [x] [Review][Patch] Validate that entry values are strings in the loader [src/data/load-oui-data.ts:31,38-41] — `parseEntries` casts `entries` to `Record<string, string>` after checking only the *object* shape, and `buildIndex` inserts each value verbatim. A corrupted or regenerated artifact whose values are `null`/number/object yields `lookupVendor` returning `{ ok: true, vendor: <non-string> }`, breaking the declared `vendor: string` in `VendorResult` and any downstream rendering in 2.3. Skip + `console.warn` + count values that are not strings, exactly as invalid keys are handled. → **Fixed:** `buildIndex` now skips entries whose value is not a string; test added.
+- [x] [Review][Patch] Validate key *content*, not just key length [src/data/load-oui-data.ts:38-42] — routing is by `key.length` alone (6/7/9), so a key of the right length but wrong content (lowercase, non-hex, or a surrogate-pair whose UTF-16 `length` happens to be 6/7/9) is stored with no warning yet can *never* match, because `lookupVendor` only ever queries uppercase hex. Assert `/^(?:[0-9A-F]{6}|[0-9A-F]{7}|[0-9A-F]{9})$/` and route any violation into the existing skipped-and-warned counter. → **Fixed:** `ENTRY_KEY` pattern guard added; routing now keyed off the validated length; test added.
+- [x] [Review][Patch] Reject an empty `entries` object [src/data/load-oui-data.ts:27-31] — `{}` passes the `schemaVersion` and object checks, so a truncated or broken artifact loads as `'ready'` and every valid MAC silently reports a normal "no vendor" miss, indistinguishable from a genuine unknown OUI. A shipped OUI database is never empty; reject (→ `dataset-unavailable`) when `Object.keys(entries).length === 0`. → **Fixed:** `parseEntries` throws on an empty entries object; test added.
+- [x] [Review][Patch] Log the caught load error in `main.ts` [src/main.ts:36-38] — the bare `catch { dispatch({ type: 'dataset-unavailable' }); }` maps *any* throw — including a programming `TypeError` somewhere in the load path — to the user-facing "Database unavailable" state with nothing written to the console. The loader already `console.warn`s on skipped keys; add `console.error(err)` in the catch so a real defect is diagnosable. → **Fixed:** catch now binds the error and `console.error`s it before dispatching.
+- [x] [Review][Defer] Empty-string vendor values are accepted as a valid hit [src/lib/lookup.ts:26] — deferred to Story 2.3: an OUI present with a blank `Organization Name` yields `{ ok: true, vendor: '' }`, which the 2.3 "Unknown vendor" microcopy must distinguish from a real miss. No blank values exist in the current artifact, so this is a hand-off, not a defect.
+- [x] [Review][Defer] Loader ignores the `counts` contract and never fails on drift [src/data/load-oui-data.ts:34-49] — deferred, enhancement beyond AC scope: warn-and-skip of unexpected-length keys is spec-mandated (Critical Decision 3), but nothing detects silent partial data. Cross-checking the built Map sizes against the artifact's `counts` (and failing the load on mismatch) would catch truncation and drift in one guard.
+
 ### Dev Agent Record
 
 #### Files Modified
@@ -101,6 +110,7 @@ Explicitly untouched (verified): `index.html`, `public/oui-data.json`, `scripts/
 #### Change Log
 
 - 2026-10-11: Story 2.2 implemented — offline OUI dataset load (`src/data/load-oui-data.ts`) + pure longest-prefix vendor resolution (`src/lib/lookup.ts`), wired through an extended reducer into a minimal non-blocking "Database unavailable" state. Manifest → `0.8.0`.
+- 2026-10-11: Code review — 4 patches applied (loader now validates key *content* and value *type*, rejects an empty `entries` object, and `main.ts` logs the caught load error); 2 defers logged to `deferred-work.md`; 7 dismissed. 3 loader tests added (202 total).
 
 #### Completion Notes
 

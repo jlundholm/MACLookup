@@ -38,6 +38,11 @@
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.
 
+## Deferred from: code review of story 2-2 (2026-10-11)
+
+- **Empty-string vendor semantics:** `lookupVendor` (src/lib/lookup.ts:26) returns `{ ok: true, vendor: '' }` for an OUI whose `Organization Name` is blank, which is indistinguishable from a real hit; Story 2.3's "Unknown vendor" microcopy must define how a blank name renders. No blank values exist in the committed artifact, so this is a hand-off rather than a defect.
+- **`counts` cross-check / fail-on-drift:** the loader (src/data/load-oui-data.ts:34-49) warn-skips unexpected-length keys (spec-mandated by Critical Decision 3) but never compares the built Map sizes against the artifact's `counts` field, so a truncated or drifted dataset loads as `'ready'` with silently missing vendors. Cross-checking sizes against `counts` and failing the load on mismatch would catch both truncation and drift. Enhancement beyond AC scope.
+
 ## Deferred from: code review of story 2-1 (2026-10-11)
 
 - **`fetch` timeout / integrity validation:** `fetchCsv` (scripts/build-oui-data.ts:158-161) has no `AbortSignal`/timeout, so a stalled TCP connection hangs `npm run build:data` indefinitely; it also does no content-type/length/row-count validation beyond `res.ok` (the empty/partial-dataset consequence is covered by the F2 patch). Enhancement beyond AC scope.

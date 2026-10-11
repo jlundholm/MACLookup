@@ -33,7 +33,8 @@ async function loadDataset(): Promise<void> {
   try {
     index = await loadOuiIndex();
     dispatch({ type: 'dataset-ready' });
-  } catch {
+  } catch (err) {
+    console.error(err);
     dispatch({ type: 'dataset-unavailable' });
   }
 }
