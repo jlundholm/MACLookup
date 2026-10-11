@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from './render';
 import type { PopupState } from '../lib/types';
@@ -83,5 +85,12 @@ describe('render', () => {
     expect(root.dataset.status).toBe('empty');
     expect(el<HTMLElement>(root, '#input-error').hidden).toBe(true);
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
+  });
+
+  it('index.html contains every id the renderer wires', () => {
+    const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+    for (const id of ['popup', 'mac-input', 'input-error', 'format-rows', 'result-banner']) {
+      expect(html).toContain(`id="${id}"`);
+    }
   });
 });

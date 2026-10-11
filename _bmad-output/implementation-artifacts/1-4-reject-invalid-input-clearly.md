@@ -4,7 +4,7 @@ baseline_commit: 53bf7a53d21c588be66e0326f553f2581f472c72
 
 # Story 1.4: Reject invalid input clearly
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -252,6 +252,7 @@ opencode / mimo-v2.6-flash-free
 ### Change Log
 
 - 2026-10-10: Implemented the first state/render/wiring layer (`PopupState`/`MacStatus`, pure `nextState`, pure `render`, single `input` listener), the standalone inline invalid error, invalid-triad field CSS via `data-status`, and happy-dom render tests; manifest bumped to 0.2.0; status set to review.
+- 2026-10-10: Code review (3 adversarial layers) applied both patches — `main.ts` now resolves required elements via a `required()` guard (clear error instead of a bare null crash) and `render` toggles `#input-error`/`#format-rows` independently (decoupled guard, no partial `data-status` commit); added an index.html id-contract drift test. Gates green (71 tests). Status set to done.
 
 ### File List
 
@@ -268,3 +269,10 @@ opencode / mimo-v2.6-flash-free
 - `package.json` (modified) — `happy-dom` devDependency.
 - `package-lock.json` (modified) — happy-dom dependency tree.
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — story 1.4 status transitions.
+
+### Review Findings
+
+_Code review of commit `2860c82` (3 adversarial layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor). 20 findings triaged → 0 decision-needed, 2 patch, 0 defer, 18 dismissed._
+
+- [x] [Review][Patch] Defend the DOM contract in `render`/`main` — `main.ts` casts possibly-null `getElementById` results with `as` (crash with a bare `Cannot read properties of null` if an id is renamed/removed), and `render.ts` sets `root.dataset.status` *before* the `if (!error || !rows) return` guard, then couples both toggles behind that one guard — so a missing `#input-error` (which Story 2.3 is slated to supersede/remove) would silently stop `#format-rows` from toggling, and a partial render leaves `data-status` flipped with no visible error. Fix: guard the lookups explicitly (fail loudly) and toggle `#input-error`/`#format-rows` independently. [src/main.ts:5-6, src/ui/render.ts:4-9]
+- [x] [Review][Patch] Link the render test fixture to real markup (drift guard) — `render.test.ts` hand-copies the popup DOM, so renaming/removing a wired id in `index.html` leaves the suite green (silent drift). Add a cheap guard test that reads `index.html` and asserts `#popup`, `#mac-input`, `#input-error`, `#format-rows`, `#result-banner` all exist. [src/ui/render.test.ts:7-19]
