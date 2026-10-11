@@ -34,4 +34,5 @@ Standing rules for AI agents working in this repo. BMAD workflows (`dev-story`,
 - Copy handler is one delegated click listener keyed by `data-format`
   (`colon|plain|cisco`).
 - Canonical microcopy is fixed: "Paste a MAC address", "Not a valid MAC
-  address", "Unknown vendor", "Copied", "Found" / "Not found" / "Invalid".
+  address", "Unknown vendor", "Copy" / "Copied", "Found" / "Not found" /
+  "Invalid".

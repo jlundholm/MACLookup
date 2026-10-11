@@ -1,4 +1,4 @@
-import type { Formats, PopupState } from '../lib/types';
+import type { FormatKey, Formats, PopupState } from '../lib/types';
 import { formats } from '../lib/format';
 
 const DASH = '—';
@@ -17,6 +17,16 @@ export function render(root: HTMLElement, state: PopupState): void {
     const which = row.dataset.format as keyof Formats | undefined;
     if (!out) continue;
     out.textContent = f && which ? f[which] ?? DASH : DASH;
+  }
+
+  const btns = rows ? Array.from(rows.querySelectorAll<HTMLButtonElement>('button[data-format]')) : [];
+  for (const btn of btns) {
+    const which = btn.dataset.format as FormatKey | undefined;
+    const flag = (which && state.copy[which]) || 'idle';
+    btn.disabled = state.status !== 'valid';
+    btn.textContent = state.status === 'valid' && flag === 'copied' ? 'Copied' : 'Copy';
+    if (flag === 'idle') btn.removeAttribute('data-copy');
+    else btn.dataset.copy = flag;
   }
 
   root.dataset.status = state.status;

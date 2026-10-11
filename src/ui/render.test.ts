@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from './render';
+import { IDLE_COPY } from './state';
 import type { PopupState } from '../lib/types';
 
 function fixture(): HTMLElement {
@@ -16,14 +17,17 @@ function fixture(): HTMLElement {
         <div class="format-row" data-format="colon">
           <span class="field-label">Colon</span>
           <span class="readout"></span>
+          <button class="copy-button" type="button" data-format="colon">Copy</button>
         </div>
         <div class="format-row" data-format="plain">
           <span class="field-label">Plain</span>
           <span class="readout"></span>
+          <button class="copy-button" type="button" data-format="plain">Copy</button>
         </div>
         <div class="format-row" data-format="cisco">
           <span class="field-label">Cisco-dot</span>
           <span class="readout"></span>
+          <button class="copy-button" type="button" data-format="cisco">Copy</button>
         </div>
       </div>
     </main>
@@ -37,9 +41,9 @@ function el<T extends HTMLElement>(root: HTMLElement, selector: string): T {
   return found;
 }
 
-const EMPTY: PopupState = { raw: '', status: 'empty', canonical: null };
-const INVALID: PopupState = { raw: 'junk', status: 'invalid', canonical: null };
-const VALID: PopupState = { raw: 'AABBCCDDEEFF', status: 'valid', canonical: 'AABBCCDDEEFF' };
+const EMPTY: PopupState = { raw: '', status: 'empty', canonical: null, copy: IDLE_COPY };
+const INVALID: PopupState = { raw: 'junk', status: 'invalid', canonical: null, copy: IDLE_COPY };
+const VALID: PopupState = { raw: 'AABBCCDDEEFF', status: 'valid', canonical: 'AABBCCDDEEFF', copy: IDLE_COPY };
 
 describe('render', () => {
   let root: HTMLElement;
@@ -120,6 +124,70 @@ describe('render', () => {
     for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
+  it('valid + idle flags: three enabled "Copy" buttons with no data-copy', () => {
+    render(root, VALID);
+    const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
+    expect(btns).toHaveLength(3);
+    for (const btn of btns) {
+      expect(btn.textContent).toBe('Copy');
+      expect(btn.disabled).toBe(false);
+      expect(btn.hasAttribute('data-copy')).toBe(false);
+    }
+  });
+
+  it('valid + copied flag: only that row shows "Copied" with data-copy', () => {
+    const state: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+    render(root, state);
+    const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
+    const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
+    const cisco = el<HTMLButtonElement>(root, 'button[data-format="cisco"]');
+    expect(colon.textContent).toBe('Copied');
+    expect(colon.dataset.copy).toBe('copied');
+    expect(plain.textContent).toBe('Copy');
+    expect(plain.hasAttribute('data-copy')).toBe(false);
+    expect(cisco.textContent).toBe('Copy');
+    expect(cisco.hasAttribute('data-copy')).toBe(false);
+    for (const btn of [colon, plain, cisco]) expect(btn.disabled).toBe(false);
+  });
+
+  it('valid + failed flag: label stays "Copy" and data-copy="failed"', () => {
+    const state: PopupState = { ...VALID, copy: { colon: 'idle', plain: 'failed', cisco: 'idle' } };
+    render(root, state);
+    const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
+    expect(plain.textContent).toBe('Copy');
+    expect(plain.dataset.copy).toBe('failed');
+    expect(plain.disabled).toBe(false);
+  });
+
+  it('invalid: all copy buttons are disabled with "Copy"', () => {
+    render(root, INVALID);
+    const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
+    expect(btns).toHaveLength(3);
+    for (const btn of btns) {
+      expect(btn.textContent).toBe('Copy');
+      expect(btn.disabled).toBe(true);
+      expect(btn.hasAttribute('data-copy')).toBe(false);
+    }
+  });
+
+  it('a copied confirmation does not survive an edit (label returns to "Copy")', () => {
+    const copied: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'copied', cisco: 'copied' } };
+    render(root, copied);
+    render(root, INVALID);
+    for (const btn of Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'))) {
+      expect(btn.textContent).toBe('Copy');
+    }
+  });
+
+  it('re-rendering an unchanged copied state keeps "Copied" (idempotent)', () => {
+    const copied: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+    render(root, copied);
+    render(root, copied);
+    expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').textContent).toBe('Copied');
+    expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').dataset.copy).toBe('copied');
+    expect(el<HTMLButtonElement>(root, 'button[data-format="plain"]').textContent).toBe('Copy');
+  });
+
   it('writes a dash for a row whose data-format is not a Formats key', () => {
     document.body.innerHTML = `
       <main id="popup">
@@ -150,6 +218,10 @@ describe('render', () => {
       expect(['colon', 'plain', 'cisco']).toContain(row.dataset.format);
       expect(row.querySelector('.field-label')).not.toBeNull();
       expect(row.querySelector('.readout')).not.toBeNull();
+      const btn = row.querySelector<HTMLButtonElement>('button.copy-button[data-format]');
+      expect(btn).not.toBeNull();
+      expect(btn?.dataset.format).toBe(row.dataset.format);
+      expect(btn?.textContent).toBe('Copy');
     }
   });
 });

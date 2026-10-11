@@ -186,6 +186,39 @@ body {
   font-size: var(--type-button-size);
   font-weight: var(--type-button-weight);
   letter-spacing: var(--type-button-tracking);
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 11px;
+  color: var(--color-text);
+  cursor: pointer;
+  justify-self: end;
+  align-self: center;
+}
+
+/* Hover keys on 'valid' only: buttons are disabled on every other status,
+   so an invalid-hover rule would be dead CSS. Excluded when a data-copy state
+   is showing (copied/failed) so the state rules are not masked by the cursor. */
+.popup[data-status='valid'] .copy-button:not(:disabled):not([data-copy]):hover {
+  color: var(--color-found-fg);
+  border-color: var(--color-found-fg);
+}
+
+.copy-button[data-copy='copied'] {
+  background: var(--color-found-bg);
+  border-color: var(--color-found-border);
+  color: var(--color-found-fg);
+}
+
+.copy-button[data-copy='failed'] {
+  border-color: var(--color-invalid-fg);
+  color: var(--color-invalid-fg);
+}
+
+.copy-button:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Invalid input state (Story 1.4) — colors driven only by data-status on the popup root.
@@ -205,9 +238,14 @@ body {
    field-label over readout. The rail keys on the INTERIM 'valid'/'invalid' status
    because data-status is never 'found' until Story 2.3 re-points these rules. */
 .format-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'label copy'
+    'readout copy';
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+  align-items: center;
   box-sizing: border-box;
   padding: var(--space-2) var(--space-3);
   background: var(--color-field);
@@ -215,6 +253,18 @@ body {
   border-left-width: 4px;
   border-radius: var(--radius-md);
   user-select: text;
+}
+
+.format-row .field-label {
+  grid-area: label;
+}
+
+.format-row .readout {
+  grid-area: readout;
+}
+
+.format-row .copy-button {
+  grid-area: copy;
 }
 
 .popup[data-status='valid'] .format-row {

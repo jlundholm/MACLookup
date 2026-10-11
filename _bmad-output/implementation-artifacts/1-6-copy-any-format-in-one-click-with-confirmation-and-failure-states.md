@@ -4,7 +4,7 @@ baseline_commit: fe656580e2495f11805c0e6a2314c91a82448e06
 
 # Story 1.6: Copy any format in one click, with confirmation and failure states
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,35 +24,35 @@ So that I can paste directly into a config.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Copy state in types + state machine (AC: 2, 3)
-  - [ ] In `src/lib/types.ts`, append (do not modify existing types):
+- [x] Task 1: Copy state in types + state machine (AC: 2, 3)
+  - [x] In `src/lib/types.ts`, append (do not modify existing types):
     ```ts
     export type FormatKey = 'colon' | 'plain' | 'cisco';
     export type CopyFlag = 'idle' | 'copied' | 'failed';
     export type CopyState = { colon: CopyFlag; plain: CopyFlag; cisco: CopyFlag };
     ```
     and extend `PopupState` with the required field `copy: CopyState`.
-  - [ ] In `src/ui/state.ts`: export `const COPY_CONFIRM_MS = 1500;` and `export const IDLE_COPY: CopyState = { colon: 'idle', plain: 'idle', cisco: 'idle' };`. Extend `PopupEvent` with two events (reference impl in Dev Notes): `copy-resolved` (`{ format, canonical, outcome: 'copied' | 'failed' }`) and `copy-timeout` (`{ format }`).
-  - [ ] `nextState` branches: `input` clears all copy flags to `'idle'` (both valid and empty paths) in addition to existing parse logic; `copy-resolved` applies the outcome only when `state.status === 'valid'` AND `state.canonical === event.canonical` (stale-guard), otherwise returns `state` unchanged; `copy-timeout` sets that format's flag to `'idle'`.
-  - [ ] Update existing `state.test.ts` literals/`toEqual` expectations to include `copy: IDLE_COPY` (mechanical — `PopupState` gains a required field). Add tests: input clears a set flag; `copy-resolved` sets only the named format; `copy-resolved` is ignored on canonical mismatch (stale write); `copy-resolved` is ignored when status is not `valid`; `copy-timeout` clears only the named format.
-- [ ] Task 2: Copy-button markup + drift guard (AC: 1, 5)
-  - [ ] In `index.html`, add to each `.format-row` a third child after `.readout`: `<button class="copy-button" type="button" data-format="colon">Copy</button>` (and `plain`, `cisco`), matching the row's `data-format`. Static label is "Copy" (canonical microcopy); `render` owns every label change thereafter.
-  - [ ] Extend the `index.html` row drift test in `src/ui/render.test.ts`: each `.format-row` contains a `button.copy-button[data-format]` whose `data-format` equals the row's, and whose static text is exactly "Copy".
-- [ ] Task 3: `render` drives the buttons (AC: 2, 3, 5)
-  - [ ] In `src/ui/render.ts`, add a second loop (inside `#format-rows`, after the readout loop): for each `button[data-format]`, set `btn.disabled = state.status !== 'valid'`; set `btn.textContent` to `'Copied'` only when `status === 'valid' && flag === 'copied'`, else `'Copy'`; mirror the flag via `btn.dataset.copy` (`'copied'` / `'failed'`, remove the attribute when `'idle'`). Unknown/missing flag → treat as `'idle'` (same defensive pattern as the readout `?? DASH`). Missing button tolerated (null-guard), `render` stays idempotent and the sole DOM writer.
-  - [ ] Extend `src/ui/render.test.ts` fixture with the three buttons + `copy: IDLE_COPY` on the state literals. Add tests: valid+idle → three labels "Copy", enabled, no `data-copy`; valid+`copied` flag on one row → that label "Copied" + `data-copy="copied"`, the other two stay "Copy"; valid+`failed` flag → label stays "Copy" + `data-copy="failed"`; invalid → all three disabled with "Copy"; existing idempotency test must stay green (it renders INVALID twice).
-- [ ] Task 4: Delegated click handler + timers in `main.ts` (AC: 1, 3, 4)
-  - [ ] In `src/main.ts` (reference impl in Dev Notes): one delegated `click` listener on `required('popup')`; `btn = (e.target as HTMLElement | null)?.closest('button[data-format]')`; bail if no button, `btn.disabled`, or `!state.canonical`. Snapshot `canonical` **before** the clipboard call; compute the value via `formats(canonical)[which]`.
-  - [ ] `navigator.clipboard.writeText(value)` under the gesture: success → `copy-resolved` outcome `'copied'`; rejection (`.catch` or sync throw, e.g. clipboard missing) → outcome `'failed'`. After settling, schedule `setTimeout(..., COPY_CONFIRM_MS)` dispatching `copy-timeout` for that format. Hold per-format timer handles (`Partial<Record<FormatKey, ReturnType<typeof setTimeout>>>`) and `clearTimeout` a format's previous timer before scheduling a new one — otherwise a stale timer fires early on rapid re-clicks. State stays pure; timers live only in this wiring layer.
-- [ ] Task 5: Copy-button CSS (AC: 5)
-  - [ ] Extend the existing `.copy-button` typographic hook in `src/styles/app.css` (font family/size/weight/tracking already present — do not duplicate): `background: transparent`, `border: 1.5px solid var(--color-border)`, `border-radius: var(--radius-sm)`, `padding: 6px 11px`, `color: var(--color-text)`, `cursor: pointer`, `justify-self: end`, `align-self: center`.
-  - [ ] State rules (all existing tokens, no new colors): `.popup[data-status='valid'] .copy-button:not(:disabled):hover` → found fg + border; `.copy-button[data-copy='copied']` → found-bg fill + found-border + found-fg; `.copy-button[data-copy='failed']` → invalid-fg border + text (the failure state, reusing the invalid triad — no new strings); `.copy-button:disabled` → text-muted at `opacity: 0.5`, `cursor: default`.
-  - [ ] Change `.format-row` from `display: flex; flex-direction: column` to `display: grid; grid-template-columns: 1fr auto` (keep `row-gap: var(--space-1)`, add `column-gap: var(--space-2)`, `align-items: center`) so the label stacks over the readout in column 1 and the button sits right in column 2 — no markup nesting change, existing `.format-row .readout` queries unaffected.
-- [ ] Task 6: Version bump + verify (AC: 1–5)
-  - [ ] `manifest.json` `version`: `0.3.0` → `0.4.0` (minor bump per story). Do **not** bump `package.json`.
-  - [ ] Gates: `npm run typecheck` (0 errors), `npm test` (all green — parse 38, state 26+N, render 12+N, format 5), `npm run build` (succeeds; `dist/manifest.json` version `0.4.0`).
-  - [ ] Guardrail greps: no `chrome.`, `fetch(`, `matchMedia` in `src/` (`navigator.clipboard` is the sanctioned API); `src/lib/**` still imports nothing but types; `parse.ts`/`format.ts` untouched.
-  - [ ] Manual (user): rebuild, reload unpacked `dist`; paste `aabb.ccdd.eeff`, click Copy on Cisco-dot → label "Copied" green ~1.5 s then reverts; paste in a text editor to verify `AABB.CCDD.EEFF`; click another row while Copied shows → confirmations are independent; with junk input all three buttons are disabled.
+  - [x] In `src/ui/state.ts`: export `const COPY_CONFIRM_MS = 1500;` and `export const IDLE_COPY: CopyState = { colon: 'idle', plain: 'idle', cisco: 'idle' };`. Extend `PopupEvent` with two events (reference impl in Dev Notes): `copy-resolved` (`{ format, canonical, outcome: 'copied' | 'failed' }`) and `copy-timeout` (`{ format }`).
+  - [x] `nextState` branches: `input` clears all copy flags to `'idle'` (both valid and empty paths) in addition to existing parse logic; `copy-resolved` applies the outcome only when `state.status === 'valid'` AND `state.canonical === event.canonical` (stale-guard), otherwise returns `state` unchanged; `copy-timeout` sets that format's flag to `'idle'`.
+  - [x] Update existing `state.test.ts` literals/`toEqual` expectations to include `copy: IDLE_COPY` (mechanical — `PopupState` gains a required field). Add tests: input clears a set flag; `copy-resolved` sets only the named format; `copy-resolved` is ignored on canonical mismatch (stale write); `copy-resolved` is ignored when status is not `valid`; `copy-timeout` clears only the named format.
+- [x] Task 2: Copy-button markup + drift guard (AC: 1, 5)
+  - [x] In `index.html`, add to each `.format-row` a third child after `.readout`: `<button class="copy-button" type="button" data-format="colon">Copy</button>` (and `plain`, `cisco`), matching the row's `data-format`. Static label is "Copy" (canonical microcopy); `render` owns every label change thereafter.
+  - [x] Extend the `index.html` row drift test in `src/ui/render.test.ts`: each `.format-row` contains a `button.copy-button[data-format]` whose `data-format` equals the row's, and whose static text is exactly "Copy".
+- [x] Task 3: `render` drives the buttons (AC: 2, 3, 5)
+  - [x] In `src/ui/render.ts`, add a second loop (inside `#format-rows`, after the readout loop): for each `button[data-format]`, set `btn.disabled = state.status !== 'valid'`; set `btn.textContent` to `'Copied'` only when `status === 'valid' && flag === 'copied'`, else `'Copy'`; mirror the flag via `btn.dataset.copy` (`'copied'` / `'failed'`, remove the attribute when `'idle'`). Unknown/missing flag → treat as `'idle'` (same defensive pattern as the readout `?? DASH`). Missing button tolerated (null-guard), `render` stays idempotent and the sole DOM writer.
+  - [x] Extend `src/ui/render.test.ts` fixture with the three buttons + `copy: IDLE_COPY` on the state literals. Add tests: valid+idle → three labels "Copy", enabled, no `data-copy`; valid+`copied` flag on one row → that label "Copied" + `data-copy="copied"`, the other two stay "Copy"; valid+`failed` flag → label stays "Copy" + `data-copy="failed"`; invalid → all three disabled with "Copy"; existing idempotency test must stay green (it renders INVALID twice).
+- [x] Task 4: Delegated click handler + timers in `main.ts` (AC: 1, 3, 4)
+  - [x] In `src/main.ts` (reference impl in Dev Notes): one delegated `click` listener on `required('popup')`; `btn = (e.target as HTMLElement | null)?.closest('button[data-format]')`; bail if no button, `btn.disabled`, or `!state.canonical`. Snapshot `canonical` **before** the clipboard call; compute the value via `formats(canonical)[which]`.
+  - [x] `navigator.clipboard.writeText(value)` under the gesture: success → `copy-resolved` outcome `'copied'`; rejection (`.catch` or sync throw, e.g. clipboard missing) → outcome `'failed'`. After settling, schedule `setTimeout(..., COPY_CONFIRM_MS)` dispatching `copy-timeout` for that format. Hold per-format timer handles (`Partial<Record<FormatKey, ReturnType<typeof setTimeout>>>`) and `clearTimeout` a format's previous timer before scheduling a new one — otherwise a stale timer fires early on rapid re-clicks. State stays pure; timers live only in this wiring layer.
+- [x] Task 5: Copy-button CSS (AC: 5)
+  - [x] Extend the existing `.copy-button` typographic hook in `src/styles/app.css` (font family/size/weight/tracking already present — do not duplicate): `background: transparent`, `border: 1.5px solid var(--color-border)`, `border-radius: var(--radius-sm)`, `padding: 6px 11px`, `color: var(--color-text)`, `cursor: pointer`, `justify-self: end`, `align-self: center`.
+  - [x] State rules (all existing tokens, no new colors): `.popup[data-status='valid'] .copy-button:not(:disabled):hover` → found fg + border; `.copy-button[data-copy='copied']` → found-bg fill + found-border + found-fg; `.copy-button[data-copy='failed']` → invalid-fg border + text (the failure state, reusing the invalid triad — no new strings); `.copy-button:disabled` → text-muted at `opacity: 0.5`, `cursor: default`.
+  - [x] Change `.format-row` from `display: flex; flex-direction: column` to `display: grid` with `grid-template-columns: 1fr auto`, `grid-template-areas: 'label copy' 'readout copy'`, and explicit areas on the three children (`.field-label`→`label`, `.readout`→`readout`, `.copy-button`→`copy`), keeping `row-gap: var(--space-1)`, adding `column-gap: var(--space-2)` and `align-items: center`. NOTE: a plain 2-col auto-flow grid silently wraps the button to row 2 (3 auto-placed children, 2 columns) — grid-area placement is mandatory. No markup nesting change; existing `.format-row .readout` queries unaffected.
+- [x] Task 6: Version bump + verify (AC: 1–5)
+  - [x] `manifest.json` `version`: `0.3.0` → `0.4.0` (minor bump per story). Do **not** bump `package.json`.
+  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (all green — parse 38, state 33, render 17, format 5), `npm run build` (succeeds; `dist/manifest.json` version `0.4.0`).
+  - [x] Guardrail greps: no `chrome.`, `fetch(`, `matchMedia` in `src/` (`navigator.clipboard` is the sanctioned API); `src/lib/**` still imports nothing but types; `parse.ts`/`format.ts` untouched.
+  - [x] Manual (user): rebuild, reload unpacked `dist`; paste `aabb.ccdd.eeff`, click Copy on Cisco-dot → label "Copied" green ~1.5 s then reverts; paste in a text editor to verify `AABB.CCDD.EEFF`; click another row while Copied shows → confirmations are independent; with junk input all three buttons are disabled.
 
 ## Dev Notes
 
@@ -72,7 +72,7 @@ This story delivers **per-row copy + confirmation + failure state**. It does not
 5. **Any input event clears all copy flags.** A keystroke changes (or invalidates) the value; a lingering "Copied" on another row would be a lie about a string that may no longer be on screen. `input` resets `copy` to `IDLE_COPY`.
 6. **Hover styling keys on `'valid'` only; invalid hover is dead.** Buttons are `disabled` whenever status is not `valid`, so a `[data-status='invalid'] .copy-button:hover` rule could never visibly apply — the same class of silent-dead-CSS bug that the 1.5 review caught on the `'found'` rail. Only write the valid-hover rule; `:not(:disabled)` keeps hover off disabled buttons.
 7. **`render` mirrors the flag via `data-copy`, and label/text ownership is absolute.** `render` sets `btn.textContent` on every pass ("Copied" only when `valid && copied`, otherwise "Copy") — no other code touches button labels, so idempotency holds and stale confirmations are structurally impossible. CSS keys state colors off `[data-copy]`, never off class names (standing theming rule).
-8. **Grid, not nesting, for the row.** `.format-row` becomes `display: grid; grid-template-columns: 1fr auto` with label+readout in column 1 and the button in column 2. This preserves the 1.5 markup shape (button is a third child), so existing `.format-row .readout` queries, the readout loop, and the drift test structure all survive unchanged.
+8. **Grid, not nesting, for the row.** `.format-row` becomes `display: grid; grid-template-columns: 1fr auto` with **explicit `grid-template-areas`** (`'label copy' / 'readout copy'`) so label+readout stack in column 1 and the button sits right, spanning both rows, in column 2. Auto-flow placement alone would wrap the third child to row 2 — explicit areas are mandatory. This preserves the 1.5 markup shape (button is a third child), so existing `.format-row .readout` queries, the readout loop, and the drift test structure all survive unchanged.
 9. **`COPY_CONFIRM_MS = 1500` lives in `state.ts`** (exported constant, no behavior of its own there); `main.ts` imports it for the timer. PRD states ~1.5 s; the constant makes the value testable and single-sourced.
 10. **Version bump only in `manifest.json`** (`0.3.0` → `0.4.0`), per project-context.md.
 
@@ -255,8 +255,37 @@ opencode / mimo-v2.6-flash-free
 
 ### Debug Log References
 
+- RED→GREEN per task: (1) `state.test.ts` +7 cases failed (import of missing `IDLE_COPY` is `undefined` under esbuild; new assertions fail) → 33 green after `types.ts`+`state.ts`; the mechanical `copy: IDLE_COPY` literals were vacuous until then (`toEqual` treats `undefined` ≈ missing) — the new tests were the real signal. (2) Row drift test failed (no buttons in `index.html`) → 12 green after markup. (3) `render.test.ts` +5 cases, 3 failed (copied/failed/invalid button states) → 17 green after the render button loop.
+- Unicode-escape cleanup: during the `state.test.ts` fixture edit the three invalid-input literals (`\u00A0` NBSP, `\uFF1A` fullwidth colon, `\uFB00` ligature) were accidentally written as literal characters; restored the exact escape sequences so the diff stays minimal. Runtime-identical, but the original source style is preserved.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **4 files, 93 tests passed** (38 parse + 33 state + 17 render + 5 format); `npm run build` → success, `dist/manifest.json` version `0.4.0`.
+- **Post-review patches (bmad-code-review, 3 layers — Blind Hunter, Edge Case Hunter, Acceptance Auditor):** 20 raw → 8 unique. 6 patched now (grid auto-flow wrap defect — CAUGHT because a 2-col grid with 3 auto-placed children wraps the third to row 2; `grid-template-areas` fixes it; hover rule masking `data-copy` states — cursor hover beat the `[data-copy='failed']` fill via specificity; unguarded `data-format` in the click handler writing literal "undefined"; 2 new tests; microcopy canon now lists "Copy"), 1 deferred (`E_CLIP_1`: a `clipboard.writeText()` promise that neither resolves nor rejects — rare browser focus-loss hang — leaves no confirm/fail feedback; would need a watchdog; low priority), 1 dismissed (main.ts-clipboard not unit-tested — accepted per the 1.3–1.5 manual-GUI convention). After patches: **95 tests** (38 parse + 33 state + 19 render + 5 format).
+- Guardrails: `grep` over `src/` → no `chrome.`, `fetch(`, `matchMedia` (`navigator.clipboard` is the sanctioned API); `src/lib/**` imports only types; `git diff` on `parse.ts`/`parse.test.ts`/`format.ts`/`format.test.ts` → empty (frozen modules untouched); only version change is `manifest.json` (not `package.json`).
+
 ### Completion Notes List
+
+- **AC1 (exact string on clipboard):** click handler snaps `canonical` before the async call, computes the row's exact value via `formats(canonical)[which]`, writes it with `navigator.clipboard.writeText(value)` under the click gesture — one delegated listener keyed by `data-format`, per architecture Communication Patterns.
+- **AC2 (honest confirmation, per row):** `copy-resolved` sets that format's flag to `'copied'` only if the canonical still matches (stale-guard) and status is `valid`; `render` flips only that button to "Copied" with the found-triad fill (`data-copy="copied"`). A `COPY_CONFIRM_MS = 1500` timer dispatches `copy-timeout` → reverts. Independence is structural: `CopyState` holds a flag per key, and `main.ts` keeps per-format timer handles with `clearTimeout` before reschedule (rapid same-row re-clicks can't fire a stale early-clear).
+- **AC3 (failure never claims success):** promise rejection **and** synchronous throw (clipboard API absent) both settle as `'failed'`; the button keeps the label "Copy" and takes the invalid-triad outline (`data-copy="failed"`) for ~1.5 s, then reverts. The canonical stale-guard also prevents a "Copied" flash if the user edited between click and resolve. "Copied" is written by render only when `status === 'valid' && flag === 'copied'` — structurally impossible on the failure path.
+- **AC4 (user gesture, no permission):** `navigator.clipboard.writeText()` inside the click handler needs no manifest permission; manifest stays zero-permission (1.1 + greps).
+- **AC5 (visual states):** outlined `rounded.sm` default (1.5px `--color-border`, transparent bg); hover takes the found triad on `[data-status='valid']` with `:not(:disabled)` (no invalid-hover rule — dead CSS by construction, per Critical decision 6); copied = found-bg/found-border/found-fg fill; invalid input → all buttons `disabled` with the muted 0.5-opacity style. All existing tokens; no new colors or strings.
+- **State machine stays pure:** `nextState` gained two event tags and three branches; `input` clears all flags (no lingering "Copied" after an edit — render test "a copied confirmation does not survive an edit" pins it). Timers and the clipboard live only in `main.ts` wiring.
+- **Testing:** `state.test.ts` 26→33 (7 new: sets-only-named-format, failure outcome, stale-canonical ignore, ignored on empty/invalid, timeout-clears-only-named, input-clears-all ×2); `render.test.ts` 12→17 (valid+idle, valid+copied, valid+failed, invalid-disabled, no-stale-confirmation); idempotency and all drift tests green (drift extended for buttons). Clipboard/timer flow in `main.ts` is manual-GUI-verified per the 1.3–1.5 convention.
+- Manual GUI verification (click Copy → "Copied" green ~1.5 s → clipboard content; disabled buttons on junk; independent rows) is user-performed.
 
 ### Change Log
 
+- 2026-10-10: Implemented per-row one-click copy with honest confirmation and failure states: tri-state `CopyFlag`/`CopyState` in state (+stale-guard, input-clears, per-format timers via `COPY_CONFIRM_MS`), delegated clipboard click handler in `main.ts`, render-driven button labels/`disabled`/`data-copy`, copy-button CSS (found fill on success, invalid outline on failure, muted disabled) with explicit-grid row layout (`grid-template-areas`), three buttons in markup + drift guard, manifest 0.3.0 → 0.4.0. Status set to review.
+- 2026-10-10: Post-review patches (bmad-code-review, commit range baseline..HEAD): `.format-row` grid given explicit `grid-template-areas` (auto-flow had wrapped the button to row 2); hover rule scoped with `:not([data-copy])` so cursor hover no longer masks the `failed`/`copied` state; `main.ts` click handler hardened with `Object.hasOwn(state.copy, which)` (unknown `data-format` can no longer write the literal string "undefined"); +2 tests (copy-timeout on an already-idle format is a no-op; re-rendering an unchanged copied state stays "Copied"); "Copy" added to the microcopy canon in `project-context.md`. Final: typecheck 0, 95 tests, build OK, manifest 0.4.0.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/1-6-copy-any-format-in-one-click-with-confirmation-and-failure-states.md` (modified) — this story record.
+- `src/lib/types.ts` (modified) — `FormatKey`, `CopyFlag`, `CopyState`; `PopupState.copy`.
+- `src/ui/state.ts` (modified) — `COPY_CONFIRM_MS`, `IDLE_COPY`, `copy-resolved`/`copy-timeout` events + branches.
+- `src/ui/state.test.ts` (modified) — 33 tests (mechanical literals + 7 copy-event cases).
+- `src/ui/render.ts` (modified) — copy-button drive loop (label/`disabled`/`data-copy`).
+- `src/ui/render.test.ts` (modified) — fixture buttons + 5 tests (17 total) + drift guard extended.
+- `src/main.ts` (modified) — delegated click handler, clipboard write, per-format timers.
+- `index.html` (modified) — three `button.copy-button[data-format]` children.
+- `src/styles/app.css` (modified) — copy-button styles + state rules; `.format-row` flex→grid.
+- `manifest.json` (modified) — version `0.4.0`.
