@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OUI Scout",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Offline MAC-address converter and OUI vendor lookup.",
   "icons": {
     "16": "icons/icon-16.png",

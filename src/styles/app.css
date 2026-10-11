@@ -200,3 +200,39 @@ body {
   margin: 0;
   color: var(--color-invalid-fg);
 }
+
+/* Format row (Story 1.5) — field bg, 1px border, rounded.md, 4px left status rail,
+   field-label over readout. The rail keys on the INTERIM 'valid'/'invalid' status
+   because data-status is never 'found' until Story 2.3 re-points these rules. */
+.format-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-field);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  user-select: text;
+}
+
+.popup[data-status='valid'] .format-row {
+  border-left-color: var(--color-found-fg);
+}
+
+.popup[data-status='invalid'] .format-row {
+  border-left-color: var(--color-invalid-fg);
+}
+
+.format-row .field-label {
+  color: var(--color-text-muted);
+}
+
+.format-row .readout {
+  color: var(--color-text);
+}
+
+.format-row .readout:empty {
+  color: var(--color-text-muted);
+}

@@ -9,3 +9,5 @@ export type PopupState = {
   status: MacStatus;
   canonical: string | null;
 };
+
+export type Formats = { colon: string; plain: string; cisco: string };

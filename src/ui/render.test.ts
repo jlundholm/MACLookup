@@ -13,9 +13,18 @@ function fixture(): HTMLElement {
       <p class="input-error" id="input-error" hidden>Not a valid MAC address</p>
       <div class="result-banner" id="result-banner" role="status" aria-live="polite" hidden></div>
       <div class="format-rows" id="format-rows" hidden>
-        <div class="format-row" data-format="colon"></div>
-        <div class="format-row" data-format="plain"></div>
-        <div class="format-row" data-format="cisco"></div>
+        <div class="format-row" data-format="colon">
+          <span class="field-label">Colon</span>
+          <span class="readout"></span>
+        </div>
+        <div class="format-row" data-format="plain">
+          <span class="field-label">Plain</span>
+          <span class="readout"></span>
+        </div>
+        <div class="format-row" data-format="cisco">
+          <span class="field-label">Cisco-dot</span>
+          <span class="readout"></span>
+        </div>
       </div>
     </main>
   `;
@@ -85,6 +94,30 @@ describe('render', () => {
     expect(root.dataset.status).toBe('empty');
     expect(el<HTMLElement>(root, '#input-error').hidden).toBe(true);
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
+  });
+
+  it('fills all three rows in order on valid', () => {
+    render(root, VALID);
+    const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
+    expect(readouts.map((r) => r.textContent)).toEqual([
+      'AA:BB:CC:DD:EE:FF',
+      'AABBCCDDEEFF',
+      'AABB.CCDD.EEFF',
+    ]);
+  });
+
+  it('clears rows to an em dash on invalid (no stale value)', () => {
+    render(root, VALID);
+    render(root, INVALID);
+    const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
+    for (const r of readouts) expect(r.textContent).toBe('—');
+  });
+
+  it('clears rows to an em dash on empty (no stale value)', () => {
+    render(root, VALID);
+    render(root, EMPTY);
+    const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
+    for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
   it('index.html contains every id the renderer wires', () => {
