@@ -4,7 +4,7 @@ baseline_commit: 53bf7a53d21c588be66e0326f553f2581f472c72
 
 # Story 1.4: Reject invalid input clearly
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,8 +24,8 @@ so that I'm told, not misled.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Extend the shared types** (AC: 5)
-  - [ ] In `src/lib/types.ts`, append (do not modify `ParseResult`):
+- [x] **Task 1: Extend the shared types** (AC: 5)
+  - [x] In `src/lib/types.ts`, append (do not modify `ParseResult`):
     ```ts
     export type MacStatus = 'empty' | 'valid' | 'invalid';
 
@@ -35,38 +35,38 @@ so that I'm told, not misled.
       canonical: string | null;
     };
     ```
-  - [ ] `types.ts` still imports nothing. No `copied` / `vendor` / `prefix` / `ready` fields yet — those arrive with Stories 1.6 / 2.2 / 2.3 (see Dev Notes → status-union decision).
-- [ ] **Task 2: Pure state transitions + tests** (AC: 4, 5)
-  - [ ] Create `src/ui/state.ts` exporting `initialState`, `PopupEvent = { type: 'input'; raw: string }`, and `nextState(state, event)` per the reference implementation in Dev Notes.
-  - [ ] Derivation is total: `raw === ''` → `'empty'`; otherwise `parseMac(raw)` decides `'valid'` (store `canonical`) or `'invalid'` (store `canonical: null` — this is what wipes stale results).
-  - [ ] Import `{ parseMac }` from `'../lib/parse'` and types from `'../lib/types'`. Pure: no DOM, no `chrome.*`, no timers, no `throw`.
-  - [ ] Create `src/ui/state.test.ts` (node env — no pragma needed): initial state; empty; every valid form → `'valid'` + uppercase canonical; invalid matrix samples (11/13 hex, non-hex, two-MAC paste, NBSP, whitespace-only) → `'invalid'` + `canonical: null`; valid→invalid transition clears `canonical`; return value is a **new object** and the input state is not mutated.
-- [ ] **Task 3: Add the inline error element** (AC: 1, 2)
-  - [ ] In `index.html`, insert between the `<input id="mac-input">` and `#result-banner`:
+  - [x] `types.ts` still imports nothing. No `copied` / `vendor` / `prefix` / `ready` fields yet — those arrive with Stories 1.6 / 2.2 / 2.3 (see Dev Notes → status-union decision).
+- [x] **Task 2: Pure state transitions + tests** (AC: 4, 5)
+  - [x] Create `src/ui/state.ts` exporting `initialState`, `PopupEvent = { type: 'input'; raw: string }`, and `nextState(state, event)` per the reference implementation in Dev Notes.
+  - [x] Derivation is total: `raw === ''` → `'empty'`; otherwise `parseMac(raw)` decides `'valid'` (store `canonical`) or `'invalid'` (store `canonical: null` — this is what wipes stale results).
+  - [x] Import `{ parseMac }` from `'../lib/parse'` and types from `'../lib/types'`. Pure: no DOM, no `chrome.*`, no timers, no `throw`.
+  - [x] Create `src/ui/state.test.ts` (node env — no pragma needed): initial state; empty; every valid form → `'valid'` + uppercase canonical; invalid matrix samples (11/13 hex, non-hex, two-MAC paste, NBSP, whitespace-only) → `'invalid'` + `canonical: null`; valid→invalid transition clears `canonical`; return value is a **new object** and the input state is not mutated.
+- [x] **Task 3: Add the inline error element** (AC: 1, 2)
+  - [x] In `index.html`, insert between the `<input id="mac-input">` and `#result-banner`:
     ```html
     <p class="input-error" id="input-error" hidden>Not a valid MAC address</p>
     ```
-  - [ ] Add the `hidden` attribute to `<div class="format-rows" id="format-rows">` (mirrors the Story 1.1 banner convention: HTML initial state matches the initial render).
-  - [ ] Do **not** add `autofocus` (Story 1.7), do **not** add ARIA/live-region attributes (Story 1.7), do **not** touch `#result-banner` (Story 2.3).
-- [ ] **Task 4: Pure render + happy-dom tests** (AC: 1–4)
-  - [ ] Create `src/ui/render.ts` exporting `render(root: HTMLElement, state: PopupState): void` per the reference implementation: set `root.dataset.status`; unhide `#input-error` iff `status === 'invalid'`; unhide `#format-rows` iff `status !== 'empty'`; touch nothing else (banner stays hidden; the input value is never written).
-  - [ ] `npm install -D happy-dom` (adds a devDependency only; project `.npmrc` already pins `legacy-peer-deps`).
-  - [ ] Create `src/ui/render.test.ts` starting with the pragma line `// @vitest-environment happy-dom`, then a minimal DOM fixture mirroring `index.html` (popup root, input, error `<p hidden>`, banner `<div hidden>`, format-rows `<div hidden>` with three empty `.format-row` children).
-  - [ ] Cover: empty → `data-status="empty"`, error hidden, rows hidden, banner still hidden; invalid → `data-status="invalid"`, error visible with the exact string "Not a valid MAC address", rows visible, banner hidden; valid → `data-status="valid"`, error hidden, rows visible; idempotency (render twice → identical DOM); render never writes `input.value` (set a value, render a differing state, assert the value is unchanged — the input is uncontrolled).
-- [ ] **Task 5: Wire the popup** (AC: 4, 5)
-  - [ ] Rewrite `src/main.ts` per the reference implementation: keep `import './styles/app.css';`, add the state/render imports, grab `#popup` and `#mac-input`, render the initial state once, and attach a single `input` listener that does `state = nextState(state, { type: 'input', raw: input.value }); render(root, state);`.
-  - [ ] No other listeners (no `change`, no `keydown`, no `matchMedia`, no clipboard).
-- [ ] **Task 6: Invalid-state CSS** (AC: 1, 2, 3)
-  - [ ] In `src/styles/app.css`, append the two rules from Dev Notes: `.popup[data-status='invalid'] .mac-input { border-color: var(--color-invalid-fg); color: var(--color-invalid-fg); }` and `.input-error { margin: 0; color: var(--color-invalid-fg); }` (body typography inherited — DESIGN.md defines no inline-error role; do not invent one).
-  - [ ] State colors are driven **only** by the `data-status` attribute — no status-specific class names (architecture Naming Patterns).
-- [ ] **Task 7: Version bump** (standing guardrail)
-  - [ ] `manifest.json` `version`: `0.1.0` → `0.2.0` (minor bump per story, project-context rule). Do **not** bump `package.json`.
-- [ ] **Task 8: Verify** (AC: 1–5)
-  - [ ] `npm test` → all suites green (existing 38 `parse.test.ts` cases + new state/render suites).
-  - [ ] `npm run typecheck` → 0 errors (new `src/ui/**` files are under `tsconfig.include: ["src", …]`).
-  - [ ] `npm run build` → succeeds; `dist/` still emits the MV3 manifest with version `0.2.0`.
-  - [ ] Guardrail greps: no `matchMedia`, no `chrome.`, no `fetch`, no new user-facing strings beyond the one HTML error line; `src/lib/parse.ts` untouched.
-  - [ ] Manually: `npm run build`, reload the unpacked `dist` in Chrome; cold open shows placeholder only; paste `hello` → red field border + "Not a valid MAC address", no banner/rows content; paste `aa:bb:cc:dd:ee:ff` → error disappears instantly; clear the field → back to resting. (Manual GUI check is a user-performed confirmation, per the Story 1.1–1.3 convention.)
+  - [x] Add the `hidden` attribute to `<div class="format-rows" id="format-rows">` (mirrors the Story 1.1 banner convention: HTML initial state matches the initial render).
+  - [x] Do **not** add `autofocus` (Story 1.7), do **not** add ARIA/live-region attributes (Story 1.7), do **not** touch `#result-banner` (Story 2.3).
+- [x] **Task 4: Pure render + happy-dom tests** (AC: 1–4)
+  - [x] Create `src/ui/render.ts` exporting `render(root: HTMLElement, state: PopupState): void` per the reference implementation: set `root.dataset.status`; unhide `#input-error` iff `status === 'invalid'`; unhide `#format-rows` iff `status !== 'empty'`; touch nothing else (banner stays hidden; the input value is never written).
+  - [x] `npm install -D happy-dom` (adds a devDependency only; project `.npmrc` already pins `legacy-peer-deps`).
+  - [x] Create `src/ui/render.test.ts` starting with the pragma line `// @vitest-environment happy-dom`, then a minimal DOM fixture mirroring `index.html` (popup root, input, error `<p hidden>`, banner `<div hidden>`, format-rows `<div hidden>` with three empty `.format-row` children).
+  - [x] Cover: empty → `data-status="empty"`, error hidden, rows hidden, banner still hidden; invalid → `data-status="invalid"`, error visible with the exact string "Not a valid MAC address", rows visible, banner hidden; valid → `data-status="valid"`, error hidden, rows visible; idempotency (render twice → identical DOM); render never writes `input.value` (set a value, render a differing state, assert the value is unchanged — the input is uncontrolled).
+- [x] **Task 5: Wire the popup** (AC: 4, 5)
+  - [x] Rewrite `src/main.ts` per the reference implementation: keep `import './styles/app.css';`, add the state/render imports, grab `#popup` and `#mac-input`, render the initial state once, and attach a single `input` listener that does `state = nextState(state, { type: 'input', raw: input.value }); render(root, state);`.
+  - [x] No other listeners (no `change`, no `keydown`, no `matchMedia`, no clipboard).
+- [x] **Task 6: Invalid-state CSS** (AC: 1, 2, 3)
+  - [x] In `src/styles/app.css`, append the two rules from Dev Notes: `.popup[data-status='invalid'] .mac-input { border-color: var(--color-invalid-fg); color: var(--color-invalid-fg); }` and `.input-error { margin: 0; color: var(--color-invalid-fg); }` (body typography inherited — DESIGN.md defines no inline-error role; do not invent one).
+  - [x] State colors are driven **only** by the `data-status` attribute — no status-specific class names (architecture Naming Patterns).
+- [x] **Task 7: Version bump** (standing guardrail)
+  - [x] `manifest.json` `version`: `0.1.0` → `0.2.0` (minor bump per story, project-context rule). Do **not** bump `package.json`.
+- [x] **Task 8: Verify** (AC: 1–5)
+  - [x] `npm test` → all suites green (existing 38 `parse.test.ts` cases + new state/render suites).
+  - [x] `npm run typecheck` → 0 errors (new `src/ui/**` files are under `tsconfig.include: ["src", …]`).
+  - [x] `npm run build` → succeeds; `dist/` still emits the MV3 manifest with version `0.2.0`.
+  - [x] Guardrail greps: no `matchMedia`, no `chrome.`, no `fetch`, no new user-facing strings beyond the one HTML error line; `src/lib/parse.ts` untouched.
+  - [x] Manually: `npm run build`, reload the unpacked `dist` in Chrome; cold open shows placeholder only; paste `hello` → red field border + "Not a valid MAC address", no banner/rows content; paste `aa:bb:cc:dd:ee:ff` → error disappears instantly; clear the field → back to resting. (Manual GUI check is a user-performed confirmation, per the Story 1.1–1.3 convention.)
 
 ## Dev Notes
 
@@ -228,8 +228,43 @@ In every non-`valid` row `canonical` is `null` — that nulling is the mechanism
 
 ### Agent Model Used
 
+opencode / mimo-v2.6-flash-free
+
 ### Debug Log References
+
+- RED→GREEN per task: `state.test.ts` first (failed on missing `./state`), then `state.ts` → 26 tests pass; `render.test.ts` first (failed on missing `./render`; happy-dom env loaded via pragma, ~0.8 s env setup), then `render.ts` → 6 tests pass.
+- `npm install -D happy-dom` → `added 1 package`, resolves `happy-dom@20.14.6` (0 vulnerabilities); `.npmrc` legacy-peer-deps pin made the plain command work.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **3 files, 70 tests passed** (38 parse + 26 state + 6 render); `npm run build` → success, `dist/manifest.json` version `0.2.0`.
+- Guardrails: `grep` over `src/` → no `matchMedia`, no `chrome.`, no `fetch(`; `git diff` on `src/lib/parse.ts`/`parse.test.ts` → empty (untouched); only the one new user-facing string ("Not a valid MAC address", verbatim in `index.html`).
+- Unicode trap rows in `state.test.ts` were written as literals first, then rewritten as `\u00A0` / `\uFF1A` / `\uFB00` escapes to match `parse.test.ts` convention (one botched script edit of the fullwidth-colon row was caught by inspection and cleaned before the RED run).
 
 ### Completion Notes List
 
+- **AC1 (empty resting):** `initialState` is `{ raw: '', status: 'empty', canonical: null }`; initial render in `main.ts` sets `data-status="empty"`, keeps `#input-error` and `#format-rows` `hidden`, and never touches `#result-banner` (stays `hidden` from Story 1.1).
+- **AC2 (inline message):** non-empty input that fails `parseMac` renders the standalone `<p class="input-error">` with the verbatim string "Not a valid MAC address". Whitespace-only input (`"   "`) is non-empty → invalid, per the recorded decision; locked by `state.test.ts`.
+- **AC3 (invalid styling, no stale):** `nextState` nulls `canonical` on every non-valid input (the stale-wipe mechanism); CSS `.popup[data-status='invalid'] .mac-input` (specificity 0,3,0) applies `--color-invalid-fg` to border **and** text and deliberately outranks `.mac-input:focus-visible` so the red survives while typing; the neutral focus halo still renders. Rows carry no values (format writing is Story 1.5).
+- **AC4 (immediate correction):** single `input` listener → `nextState` → `render`; error toggles on the same event, no reload, no submit. `render` never writes `input.value`, so mid-string editing keeps its caret.
+- **AC5 (architecture shape):** `MacStatus` + `PopupState` in `src/lib/types.ts` (interim `'valid'` status, documented); pure `nextState` in `src/ui/state.ts` (spread-based, returns new objects, never mutates); `render` in `src/ui/render.ts` is the sole DOM writer (idempotent, `data-status` + `hidden` attributes only); `main.ts` orchestrates. `src/lib/**` purity untouched — `state.ts` imports only `lib/parse` + `lib/types`.
+- **Testing:** `state.test.ts` (26 cases: initial/empty/valid matrix/invalid matrix incl. NBSP, fullwidth colon, `U+FB00` ligatures, multi-MAC, whitespace-only; stale-canonical clearing both directions; new-object/no-mutation). `render.test.ts` (6 cases with `// @vitest-environment happy-dom`: three states, idempotency, uncontrolled input, invalid→empty restore). `vitest.config.ts` unchanged — pragma-per-file resolves the Story 1.3 defer.
+- **Standing guardrails:** manifest `0.1.0 → 0.2.0` (only `manifest.json`; `package.json` untouched); zero permissions/network/telemetry; no new runtime deps (`happy-dom` is a devDependency); microcopy verbatim; no ARIA/autofocus (Story 1.7); banner untouched (Story 2.3).
+- Manual GUI verification (build + reload unpacked `dist`, paste junk → red + error, fix → instant clear, clear → resting) is a user-performed confirmation per the Story 1.1–1.3 convention.
+
+### Change Log
+
+- 2026-10-10: Implemented the first state/render/wiring layer (`PopupState`/`MacStatus`, pure `nextState`, pure `render`, single `input` listener), the standalone inline invalid error, invalid-triad field CSS via `data-status`, and happy-dom render tests; manifest bumped to 0.2.0; status set to review.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/1-4-reject-invalid-input-clearly.md` (modified) — this story record.
+- `src/lib/types.ts` (modified) — added `MacStatus` (interim `'empty' | 'valid' | 'invalid'`) and `PopupState`.
+- `src/ui/state.ts` (new) — `initialState`, `PopupEvent`, pure `nextState`.
+- `src/ui/state.test.ts` (new) — 26 transition/purity tests.
+- `src/ui/render.ts` (new) — `render(root, state)`, sole DOM writer.
+- `src/ui/render.test.ts` (new) — 6 happy-dom DOM tests (per-file pragma).
+- `index.html` (modified) — `#input-error` inline message element; `hidden` on `#format-rows`.
+- `src/styles/app.css` (modified) — `.popup[data-status='invalid'] .mac-input` + `.input-error` rules.
+- `src/main.ts` (modified) — state/render wiring, single `input` listener.
+- `manifest.json` (modified) — version `0.2.0`.
+- `package.json` (modified) — `happy-dom` devDependency.
+- `package-lock.json` (modified) — happy-dom dependency tree.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — story 1.4 status transitions.

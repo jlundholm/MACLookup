@@ -20,6 +20,7 @@
         spellcheck="false"
         aria-label="MAC address"
       />
+      <p class="input-error" id="input-error" hidden>Not a valid MAC address</p>
       <div
         class="result-banner"
         id="result-banner"
@@ -27,7 +28,7 @@
         aria-live="polite"
         hidden
       ></div>
-      <div class="format-rows" id="format-rows">
+      <div class="format-rows" id="format-rows" hidden>
         <div class="format-row" data-format="colon"></div>
         <div class="format-row" data-format="plain"></div>
         <div class="format-row" data-format="cisco"></div>
