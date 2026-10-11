@@ -1,21 +1,30 @@
 # Deferred Work
 
 > **Resolved by Story 1.7 (accessibility floor):** the Story 1.1 live-region
-> `hidden`-suppression entry, the Story 1.2 forced-colors entry, and the Story
-> 1.3 `outline: none` forced-colors entry are discharged (1.7 added
-> `role="status" aria-live="polite"` on `#input-error`, the
-> `@media (forced-colors: active)` focus path, and the
-> `prefers-reduced-motion` guard). The Story 1.1 **banner** live-region note is
-> re-scoped to Story 2.3: when 2.3 first writes into `#result-banner`, use the
-> canonical pattern — a permanently-present region with content-driven text
-> changes, never hidden-with-content (an always-rendered empty element is a
-> flex item under `.popup { gap }` and would add phantom spacing, so the
-> content-driven swap must land together with 2.3's banner layout). The Story
-> 1.2 zoom/fixed-px clipping entry is **re-deferred**: properly fixing text
-> scaling means re-basing the type system on `rem` plus shell changes across
-> every component — a cross-cutting visual overhaul with real regression risk
-> to 1.2/1.5's pixel-matched tokens; revisit only if store review or a real
-> user reports clipping.
+> `hidden`-suppression entry and the Story 1.3 `outline: none` forced-colors
+> entry are discharged. `#input-error` is a permanently-present polite live
+> region whose text is written/cleared by `render()` (content-driven, never
+> hidden-with-content), so the same prefilled-then-toggled suppression the 1.1
+> entry warned about is not reintroduced; the Story 1.3 entry's
+> `@media (forced-colors: active)` focus path is added for both `.mac-input` and
+> `.copy-button`. The Story 1.2 entry is **partially** discharged: its
+> forced-colors focus concern is resolved by the same 1.7 media block, while its
+> zoom/fixed-px clipping concern is **re-deferred** (below). The Story 1.1
+> **banner** live-region note is re-scoped to Story 2.3: when 2.3 first writes
+> into `#result-banner`, use the canonical content-driven pattern now proven on
+> `#input-error` — a permanently-present region with text written/cleared, never
+> hidden-with-content (an always-rendered empty element is a flex item under
+> `.popup { gap }`, so 1.7 neutralizes the empty state with
+> `.input-error:empty { position: absolute }` — the banner must do the same or
+> land its own layout). The Story 1.2 zoom/fixed-px clipping entry is
+> **re-deferred**: properly fixing text scaling means re-basing the type system
+> on `rem` plus shell changes across every component — a cross-cutting visual
+> overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
+> only if store review or a real user reports clipping.
+
+## Deferred from: code review of story 1-7 (2026-10-11)
+
+- MV3 popup `autofocus` is platform-dependent and has no fallback: Chromium popup-document focus quirks can leave both `autofocus` and programmatic `focus()` as no-ops until the popup window gains focus, so AC1 ("popup opens with focus in the field") has no recovery path on affected Chrome builds. Story 1-7 deliberately ships declarative-only (no JS `focus()` call in `main.ts`); the manual GUI verification step in Task 6 is the current coverage. Revisit only if a real user reports the field doesn't start focused; a JS fallback would need care not to steal focus from the address bar on open.
 
 ## Deferred from: code review of 1-1-scaffold-the-extension-zero-permission-manifest-and-popup-shell (2026-10-10)
 

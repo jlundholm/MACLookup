@@ -198,8 +198,10 @@ body {
 
 /* Hover keys on 'valid' only: buttons are disabled on every other status,
    so an invalid-hover rule would be dead CSS. Excluded when a data-copy state
-   is showing (copied/failed) so the state rules are not masked by the cursor. */
-.popup[data-status='valid'] .copy-button:not(:disabled):not([data-copy]):hover {
+   is showing (copied/failed) so the state rules are not masked by the cursor,
+   and excluded while keyboard-focused (Story 1.7) so the neutral focus ring is
+   never overridden by the status-colored hover border. */
+.popup[data-status='valid'] .copy-button:not(:disabled):not([data-copy]):not(:focus-visible):hover {
   color: var(--color-found-fg);
   border-color: var(--color-found-fg);
 }
@@ -241,6 +243,16 @@ body {
 .input-error {
   margin: 0;
   color: var(--color-invalid-fg);
+}
+
+/* Story 1.7 — #input-error is a permanently-present polite live region whose
+   text is written/cleared by render (never hidden-with-content). While empty it
+   must not participate in the .popup flex column, or it would add a phantom
+   gap at rest and between input/rows. Absolute positioning removes it from the
+   flex flow while keeping it in the accessibility tree (unlike display:none);
+   once it has content, :empty stops matching and it returns to normal flow. */
+.input-error:empty {
+  position: absolute;
 }
 
 /* Format row (Story 1.5) — field bg, 1px border, rounded.md, 4px left status rail,

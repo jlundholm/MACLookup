@@ -11,7 +11,7 @@ function fixture(): HTMLElement {
     <main class="popup" id="popup">
       <p class="wordmark">OUI Scout</p>
       <input class="mac-input" id="mac-input" type="text" placeholder="Paste a MAC address" />
-      <p class="input-error" id="input-error" hidden>Not a valid MAC address</p>
+      <p class="input-error" id="input-error" role="status" aria-live="polite"></p>
       <div class="result-banner" id="result-banner" role="status" aria-live="polite" hidden></div>
       <div class="format-rows" id="format-rows" hidden>
         <div class="format-row" data-format="colon">
@@ -55,7 +55,7 @@ describe('render', () => {
   it('renders the empty resting state: no error, no rows, no banner', () => {
     render(root, EMPTY);
     expect(root.dataset.status).toBe('empty');
-    expect(el<HTMLElement>(root, '#input-error').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
     expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
   });
@@ -64,16 +64,15 @@ describe('render', () => {
     render(root, INVALID);
     expect(root.dataset.status).toBe('invalid');
     const error = el<HTMLElement>(root, '#input-error');
-    expect(error.hidden).toBe(false);
     expect(error.textContent).toBe('Not a valid MAC address');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
     expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
   });
 
-  it('renders valid: hides the error, reveals the rows container, no banner', () => {
+  it('renders valid: clears the error, reveals the rows container, no banner', () => {
     render(root, VALID);
     expect(root.dataset.status).toBe('valid');
-    expect(el<HTMLElement>(root, '#input-error').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
     expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
   });
@@ -96,7 +95,7 @@ describe('render', () => {
     render(root, INVALID);
     render(root, EMPTY);
     expect(root.dataset.status).toBe('empty');
-    expect(el<HTMLElement>(root, '#input-error').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
   });
 
@@ -238,6 +237,8 @@ describe('render', () => {
     expect(error).not.toBeNull();
     expect(error?.getAttribute('role')).toBe('status');
     expect(error?.getAttribute('aria-live')).toBe('polite');
+    expect(error?.hasAttribute('hidden')).toBe(false);
+    expect(error?.textContent).toBe('');
     const banner = host.querySelector<HTMLElement>('#result-banner');
     expect(banner).not.toBeNull();
     expect(banner?.getAttribute('role')).toBe('status');
@@ -252,10 +253,15 @@ describe('render', () => {
     }
   });
 
-  it('app.css carries the Story 1.7 accessibility rules', () => {
+  it('app.css carries the Story 1.7 accessibility rules with real declarations', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles/app.css'), 'utf8');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('transition: none;');
+    expect(css).toContain('animation: none;');
     expect(css).toContain('@media (forced-colors: active)');
+    expect(css).toContain('outline: 2px solid CanvasText;');
     expect(css).toContain('.copy-button:focus-visible');
+    expect(css).toContain('outline: none;');
+    expect(css).toContain('box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);');
   });
 });

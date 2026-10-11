@@ -2,12 +2,13 @@ import type { FormatKey, Formats, PopupState } from '../lib/types';
 import { formats } from '../lib/format';
 
 const DASH = '—';
+const INVALID_MESSAGE = 'Not a valid MAC address';
 
 export function render(root: HTMLElement, state: PopupState): void {
   const error = root.querySelector<HTMLElement>('#input-error');
   const rows = root.querySelector<HTMLElement>('#format-rows');
 
-  if (error) error.hidden = state.status !== 'invalid';
+  if (error) error.textContent = state.status === 'invalid' ? INVALID_MESSAGE : '';
   if (rows) rows.hidden = state.status === 'empty';
 
   const f = state.canonical ? formats(state.canonical) : null;
