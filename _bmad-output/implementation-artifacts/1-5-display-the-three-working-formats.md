@@ -4,7 +4,7 @@ baseline_commit: d2a6cb2f03a008ad57d65248a9d93fdeed7781f1
 
 # Story 1.5: Display the three working formats
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
