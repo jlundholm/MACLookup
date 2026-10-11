@@ -3,6 +3,7 @@ import { formats } from '../lib/format';
 
 const DASH = '—';
 const INVALID_MESSAGE = 'Not a valid MAC address';
+const DATABASE_UNAVAILABLE_MESSAGE = 'Database unavailable';
 
 export function render(root: HTMLElement, state: PopupState): void {
   const error = root.querySelector<HTMLElement>('#input-error');
@@ -28,6 +29,13 @@ export function render(root: HTMLElement, state: PopupState): void {
     btn.textContent = state.status === 'valid' && flag === 'copied' ? 'Copied' : 'Copy';
     if (flag === 'idle') btn.removeAttribute('data-copy');
     else btn.dataset.copy = flag;
+  }
+
+  const banner = root.querySelector<HTMLElement>('#result-banner');
+  if (banner) {
+    const unavailable = state.dataStatus === 'unavailable';
+    banner.hidden = !unavailable;
+    banner.textContent = unavailable ? DATABASE_UNAVAILABLE_MESSAGE : '';
   }
 
   root.dataset.status = state.status;

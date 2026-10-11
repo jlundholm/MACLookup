@@ -4,7 +4,7 @@ baseline_commit: e78dfd74b6eeeeb61bbb0c615ee86ebac55e6cf2
 
 # Story 2.2: Load the dataset and resolve the vendor with longest-prefix match
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,66 +25,117 @@ So that I know the manufacturer without any network request.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the pure lookup module `src/lib/lookup.ts` (AC: 3, 4)
-  - [ ] Create `src/lib/lookup.ts` exporting the exact architecture signature `lookupVendor(canonical: string, index: OuiIndex): VendorResult` where `VendorResult = { ok: true; vendor: string; prefix: string } | { ok: false; prefix: string }` and `OuiIndex = { l24: Map<string,string>; m28: Map<string,string>; s36: Map<string,string> }` (architecture.md:214).
-  - [ ] **Longest-prefix, no chained `||`:** probe `canonical.slice(0, 9)` in `index.s36`, then `canonical.slice(0, 7)` in `index.m28`, then `canonical.slice(0, 6)` in `index.l24`; the **first hit wins** and its key length is the reported `prefix`. Use explicit branching (`if (hit) return …`) rather than `a || b || c` — a chain cannot report *which* level matched, which the `prefix` in the result exists to carry. Keys are exact uppercase-hex strings; **never** numeric ranges or integer coercion (avoids endianness bugs).
-  - [ ] On no match at all three levels, return `{ ok: false, prefix: canonical.slice(0, 6) }` — the /24 OUI, which Story 2.3 must display as "the prefix queried" on the miss banner (epics.md:470). See Critical Decision 4.
-  - [ ] Validate the input first: if `canonical` does not match `/^[0-9A-F]{12}$/`, return `{ ok: false, prefix: '' }` — never throw, never fabricate a prefix from garbage. See Critical Decision 5.
-  - [ ] Keep the module pure: no `chrome.*`, no DOM, no `fetch`, no side effects. Import nothing except `export type`. Vendor strings pass through **verbatim** (already verbatim in the artifact; do not trim/uppercase).
-- [ ] Task 2: Co-located lookup tests with pinned fixtures (AC: 2, 3, 4)
-  - [ ] Create `src/lib/lookup.test.ts` — **Node env, no** `// @vitest-environment happy-dom` pragma (pure string/Map logic; same call as 1-3, 1-8, and 2-1).
-  - [ ] **Unit layer** — tiny inline fixture `OuiIndex` Maps (3-5 entries): a hit at each of the three levels; a constructed overlap where all three levels hit and the /36 wins; a miss; the malformed-canonical guard (`'junk'`, `'AABBCC'`, lower-case, 11 chars → all `{ ok: false, prefix: '' }`); and an assertion that a returned `prefix` is always a substring of the canonical (union shape check).
-  - [ ] **Integration layer against the committed artifact** — `readFileSync(resolve(process.cwd(), 'public/oui-data.json'), 'utf8')` + `JSON.parse` (the established `render.test.ts` / `privacy.guard.test.ts` convention; **never** `new URL`), then build the three Maps exactly the way the loader will (one pass over `Object.entries`, routing by key length) and assert the pinned fixtures below. This ties 2.2 to the real committed database and catches schema drift, and it is where 2-1 deliberately parked the pinned lookups (2-1 testing standards).
-  - [ ] Pinned fixtures, **verified against the committed artifact this story**:
+- [x] Task 1: Add the pure lookup module `src/lib/lookup.ts` (AC: 3, 4)
+  - [x] Create `src/lib/lookup.ts` exporting the exact architecture signature `lookupVendor(canonical: string, index: OuiIndex): VendorResult` where `VendorResult = { ok: true; vendor: string; prefix: string } | { ok: false; prefix: string }` and `OuiIndex = { l24: Map<string,string>; m28: Map<string,string>; s36: Map<string,string> }` (architecture.md:214).
+  - [x] **Longest-prefix, no chained `||`:** probe `canonical.slice(0, 9)` in `index.s36`, then `canonical.slice(0, 7)` in `index.m28`, then `canonical.slice(0, 6)` in `index.l24`; the **first hit wins** and its key length is the reported `prefix`. Use explicit branching (`if (hit) return …`) rather than `a || b || c` — a chain cannot report *which* level matched, which the `prefix` in the result exists to carry. Keys are exact uppercase-hex strings; **never** numeric ranges or integer coercion (avoids endianness bugs).
+  - [x] On no match at all three levels, return `{ ok: false, prefix: canonical.slice(0, 6) }` — the /24 OUI, which Story 2.3 must display as "the prefix queried" on the miss banner (epics.md:470). See Critical Decision 4.
+  - [x] Validate the input first: if `canonical` does not match `/^[0-9A-F]{12}$/`, return `{ ok: false, prefix: '' }` — never throw, never fabricate a prefix from garbage. See Critical Decision 5.
+  - [x] Keep the module pure: no `chrome.*`, no DOM, no `fetch`, no side effects. Import nothing except `export type`. Vendor strings pass through **verbatim** (already verbatim in the artifact; do not trim/uppercase).
+- [x] Task 2: Co-located lookup tests with pinned fixtures (AC: 2, 3, 4)
+  - [x] Create `src/lib/lookup.test.ts` — **Node env, no** `// @vitest-environment happy-dom` pragma (pure string/Map logic; same call as 1-3, 1-8, and 2-1).
+  - [x] **Unit layer** — tiny inline fixture `OuiIndex` Maps (3-5 entries): a hit at each of the three levels; a constructed overlap where all three levels hit and the /36 wins; a miss; the malformed-canonical guard (`'junk'`, `'AABBCC'`, lower-case, 11 chars → all `{ ok: false, prefix: '' }`); and an assertion that a returned `prefix` is always a substring of the canonical (union shape check).
+  - [x] **Integration layer against the committed artifact** — `readFileSync(resolve(process.cwd(), 'public/oui-data.json'), 'utf8')` + `JSON.parse` (the established `render.test.ts` / `privacy.guard.test.ts` convention; **never** `new URL`), then build the three Maps exactly the way the loader will (one pass over `Object.entries`, routing by key length) and assert the pinned fixtures below. This ties 2.2 to the real committed database and catches schema drift, and it is where 2-1 deliberately parked the pinned lookups (2-1 testing standards).
+  - [x] Pinned fixtures, **verified against the committed artifact this story**:
     - MA-L: `F01898000000` → `{ ok: true, vendor: 'Apple, Inc.', prefix: 'F01898' }` (AC4's explicit fixture).
     - MA-M: `1006483ABCD` → `{ ok: true, vendor: 'illuminous LLC', prefix: '1006483' }` — its /24 `100648` is "IEEE Registration Authority", so this simultaneously proves MA-M coverage (AC2) and /28-beats-/24 (AC3).
     - MA-S: `001BC5000123` → `{ ok: true, vendor: 'Converging Systems Inc.', prefix: '001BC5000' }` — its /24 `001BC5` is "IEEE Registration Authority", proving MA-S coverage (AC2) and /36-beats-/24 (AC3). Note `001BC500` (the /28) is absent, which also proves the lookup does not require a full cascade.
     - No match: `FFFFFF000001` → `{ ok: false, prefix: 'FFFFFF' }` (absent at all three levels).
-  - [ ] Cross-check the Map sizes against the artifact's `counts` (`l24` 40316, `m28` 6628, `s36` 7226; sum 54170) so a routing bug that drops a bucket fails the suite.
-- [ ] Task 3: Add the single I/O boundary `src/data/load-oui-data.ts` (AC: 1, 6)
-  - [ ] Create the new directory `src/data/` (architecture reserves it as the I/O layer) with `load-oui-data.ts` exporting `loadOuiIndex(): Promise<OuiIndex>`.
-  - [ ] Call `fetch(chrome.runtime.getURL('oui-data.json'))` **inline on one line, exactly in that shape** — the 1-8 privacy guard's heuristic flags a bare-variable `fetch(url)` even when `getURL` appears elsewhere in the file, and that behavior is itself asserted by `tests/privacy.guard.test.ts:300-305`. Do not hoist the URL into a `const`. See Critical Decision 6.
-  - [ ] Reject on a non-ok `Response` (`res.ok === false` or missing), on a `JSON.parse` failure, and when `schemaVersion !== 1` (the versioned contract 2-1 pinned for exactly this consumer). See Critical Decision 7.
-  - [ ] Build the three Maps in **one pass** over `Object.entries(entries)`, routing by key length (6 → `l24`, 7 → `m28`, 9 → `s36`) — length is authoritative (2-1 Critical Decision 3). Keys of any other length are skipped with a `console.warn` and counted; they are never inserted into a wrong bucket. O(n), no second scan, no sorting.
-  - [ ] Do not cache at module scope and do not mutate the Maps after returning — the caller owns the index. Exactly one load happens per popup lifetime (AC1: "builds … once").
-  - [ ] No `AbortSignal`/timeout (the resource is local; 2-1 deferred the same for the build-time download and this is the same trade-off).
-- [ ] Task 4: Loader tests with stubbed `chrome`/`fetch` (AC: 1, 6)
-  - [ ] Create `src/data/load-oui-data.test.ts` — Node env (no DOM required). In `beforeEach` stub `globalThis.chrome = { runtime: { getURL: (p: string) => \`chrome-extension://test/${p}\` } }` and `globalThis.fetch`; restore both in `afterEach`. (`chrome-types` already declares the global, so the stub typechecks with no import.) Use `new Response(...)` — available in Node 18+.
-  - [ ] Cover: **success** → three Maps whose `.size`s equal the payload `counts` and whose values are verbatim; **non-ok Response** → rejects; **invalid JSON body** → rejects; **`schemaVersion: 2`** → rejects; **an unexpected-length key** in a fixture payload → skipped with a `console.warn` (spy it) and absent from all three Maps.
-  - [ ] Use a small synthetic payload in the error cases — never the 1.8 MB artifact — so the suite stays fast.
-- [ ] Task 5: Extend the state model for the lookup result and dataset status (AC: 2, 3, 6)
-  - [ ] In `src/lib/types.ts`: add `export type DataStatus = 'loading' | 'ready' | 'unavailable';` next to `MacStatus`, and extend `PopupState` with two **required** fields — `vendor: VendorResult | null` and `dataStatus: DataStatus` — importing `VendorResult` via `import type` from `./lookup` (no cycle: `lookup.ts` imports nothing).
-  - [ ] In `src/ui/state.ts`: add `| { type: 'dataset-ready' } | { type: 'dataset-unavailable' }` to `PopupEvent`; add the defaulted third parameter `index: OuiIndex | null = null` to `nextState` (existing 2-arg calls keep compiling and behave as the `vendor: null` subset); set `initialState.dataStatus = 'loading'` and `initialState.vendor = null`.
-  - [ ] `case 'input'`: parse as today; if the parsed canonical is non-null **and** `index` is non-null, set `vendor = lookupVendor(canonical, index)`, else `vendor = null`. `vendor` is therefore always `null` exactly when `canonical` is null. Single parse — see Critical Decision 1.
-  - [ ] `case 'dataset-ready'`: `dataStatus: 'ready'`; if `state.canonical` is non-null, re-resolve `vendor = lookupVendor(state.canonical, index)` so a MAC typed *before* the load finished lights up without re-typing; else `vendor: null`.
-  - [ ] `case 'dataset-unavailable'`: `dataStatus: 'unavailable'` and `vendor: null`. This is the distinct non-blocking state AC6 requires — parsing, `status`, and `canonical` are untouched, so format conversion keeps working (non-blocking).
-  - [ ] Update `src/ui/state.test.ts`: the `toEqual` assertions on `initialState` (lines 11, 17, 37, 57) and the `before` literal (line 88) gain `vendor: null` / the right `dataStatus`. Add cases — valid input **with** an index yields the pinned `vendor`; valid input **without** an index yields `vendor: null`; `dataset-ready` fills `vendor` from an already-typed canonical; `dataset-ready` with empty input does not throw; `dataset-unavailable` clears `vendor` and sets `dataStatus`; input after `dataset-unavailable` still derives `status`/`canonical`/formats.
-- [ ] Task 6: Wire the load + lookup in `src/main.ts` (AC: 1, 5, 6)
-  - [ ] Keep `main.ts` as the composition hub: hold the loaded index in a module-level `let index: OuiIndex | null = null`; on module init dispatch `{ type: 'dataset-ready' }` through `nextState` passing the freshly loaded index, or `{ type: 'dataset-unavailable' }` in a `catch`. Do **not** store the index on `PopupState` (Critical Decision 3).
-  - [ ] Pass `index` on every `input` dispatch so live typing resolves while the dataset is ready.
-  - [ ] Await the load before the first `render` **only** if it does not delay first paint — prefer firing the load without blocking (the `loading` state renders nothing, so the popup is interactive immediately) and letting `dataset-ready` re-resolve. Either way the `input` listener must be attached before the load resolves, so a fast paste is never dropped.
-  - [ ] Catch **all** load failures (rejected promise, thrown sync error) so the popup can never crash on a local-resource miss (AC6).
-- [ ] Task 7: Minimal "database unavailable" render treatment (AC: 6)
-  - [ ] In `src/ui/render.ts`, when `state.dataStatus === 'unavailable'`, un-hide the existing `#result-banner` and write the literal text `Database unavailable`; leave it hidden for `'loading'` and `'ready'`. Nothing else about the banner changes — the full status-lamp / triad / announcement anatomy is Story 2.3's, which will extend this same element. See Critical Decision 8.
-  - [ ] Non-blocking: the invalid inline error, the three format rows, and the copy buttons keep their current behavior while unavailable.
-  - [ ] Update `src/ui/render.test.ts`: add `vendor: null, dataStatus: 'ready'` to the `EMPTY` / `INVALID` / `VALID` fixtures (they are `PopupState` literals); add cases for `unavailable` (banner visible with the exact text), `loading` (hidden), and `ready` (hidden); confirm idempotence and the "never writes the input value" invariant still hold.
-- [ ] Task 8: Measure load + lookup performance (AC: 5)
-  - [ ] Add a perf/integration test that reads the **real** `public/oui-data.json`, `JSON.parse`s it, and builds the three Maps, asserting wall-clock under a deliberately generous ceiling (pin **2000 ms** — this guards the pathological O(n²) regression only; the NFR's < 100 ms is a human-perception target, not a CI-assertable number). Record the actual measured local build time in the story's Completion Notes.
-  - [ ] Manually verify paste → result is perceptually instant in the built popup (`npm run build`, load unpacked `dist/`) and record the observation. NFR1 / SM-1.
-- [ ] Task 9: Gates, guardrails, version bump (AC: 1–6)
-  - [ ] `manifest.json` `version`: `0.7.0` → `0.8.0` (minor bump per story; `package.json` `version` untouched, per project-context).
-  - [ ] Gates, all green before done: `npm run typecheck` (0 errors), `npm test` (existing 145 + the new lookup/loader/state/render cases), `npm run build` (succeeds; `dist/oui-data.json` still copied verbatim; `dist/` size unchanged within NFR5).
-  - [ ] Guardrail greps: the **only** `fetch` in `src/` is the inline `chrome.runtime.getURL` call; no outbound URL literal anywhere in `src/`; no `chrome.storage`, no permissions, no background/content-script additions (`tests/privacy.guard.test.ts` enforces all of this — keep it green).
-  - [ ] Record the pinned fixture values, the measured build time, and the manual paste-latency observation in Completion Notes.
+  - [x] Cross-check the Map sizes against the artifact's `counts` (`l24` 40316, `m28` 6628, `s36` 7226; sum 54170) so a routing bug that drops a bucket fails the suite.
+- [x] Task 3: Add the single I/O boundary `src/data/load-oui-data.ts` (AC: 1, 6)
+  - [x] Create the new directory `src/data/` (architecture reserves it as the I/O layer) with `load-oui-data.ts` exporting `loadOuiIndex(): Promise<OuiIndex>`.
+  - [x] Call `fetch(chrome.runtime.getURL('oui-data.json'))` **inline on one line, exactly in that shape** — the 1-8 privacy guard's heuristic flags a bare-variable `fetch(url)` even when `getURL` appears elsewhere in the file, and that behavior is itself asserted by `tests/privacy.guard.test.ts:300-305`. Do not hoist the URL into a `const`. See Critical Decision 6.
+  - [x] Reject on a non-ok `Response` (`res.ok === false` or missing), on a `JSON.parse` failure, and when `schemaVersion !== 1` (the versioned contract 2-1 pinned for exactly this consumer). See Critical Decision 7.
+  - [x] Build the three Maps in **one pass** over `Object.entries(entries)`, routing by key length (6 → `l24`, 7 → `m28`, 9 → `s36`) — length is authoritative (2-1 Critical Decision 3). Keys of any other length are skipped with a `console.warn` and counted; they are never inserted into a wrong bucket. O(n), no second scan, no sorting.
+  - [x] Do not cache at module scope and do not mutate the Maps after returning — the caller owns the index. Exactly one load happens per popup lifetime (AC1: "builds … once").
+  - [x] No `AbortSignal`/timeout (the resource is local; 2-1 deferred the same for the build-time download and this is the same trade-off).
+- [x] Task 4: Loader tests with stubbed `chrome`/`fetch` (AC: 1, 6)
+  - [x] Create `src/data/load-oui-data.test.ts` — Node env (no DOM required). In `beforeEach` stub `globalThis.chrome = { runtime: { getURL: (p: string) => \`chrome-extension://test/${p}\` } }` and `globalThis.fetch`; restore both in `afterEach`. (`chrome-types` already declares the global, so the stub typechecks with no import.) Use `new Response(...)` — available in Node 18+.
+  - [x] Cover: **success** → three Maps whose `.size`s equal the payload `counts` and whose values are verbatim; **non-ok Response** → rejects; **invalid JSON body** → rejects; **`schemaVersion: 2`** → rejects; **an unexpected-length key** in a fixture payload → skipped with a `console.warn` (spy it) and absent from all three Maps.
+  - [x] Use a small synthetic payload in the error cases — never the 1.8 MB artifact — so the suite stays fast.
+- [x] Task 5: Extend the state model for the lookup result and dataset status (AC: 2, 3, 6)
+  - [x] In `src/lib/types.ts`: add `export type DataStatus = 'loading' | 'ready' | 'unavailable';` next to `MacStatus`, and extend `PopupState` with two **required** fields — `vendor: VendorResult | null` and `dataStatus: DataStatus` — importing `VendorResult` via `import type` from `./lookup` (no cycle: `lookup.ts` imports nothing).
+  - [x] In `src/ui/state.ts`: add `| { type: 'dataset-ready' } | { type: 'dataset-unavailable' }` to `PopupEvent`; add the defaulted third parameter `index: OuiIndex | null = null` to `nextState` (existing 2-arg calls keep compiling and behave as the `vendor: null` subset); set `initialState.dataStatus = 'loading'` and `initialState.vendor = null`.
+  - [x] `case 'input'`: parse as today; if the parsed canonical is non-null **and** `index` is non-null, set `vendor = lookupVendor(canonical, index)`, else `vendor = null`. `vendor` is therefore always `null` exactly when `canonical` is null. Single parse — see Critical Decision 1.
+  - [x] `case 'dataset-ready'`: `dataStatus: 'ready'`; if `state.canonical` is non-null, re-resolve `vendor = lookupVendor(state.canonical, index)` so a MAC typed *before* the load finished lights up without re-typing; else `vendor: null`.
+  - [x] `case 'dataset-unavailable'`: `dataStatus: 'unavailable'` and `vendor: null`. This is the distinct non-blocking state AC6 requires — parsing, `status`, and `canonical` are untouched, so format conversion keeps working (non-blocking).
+  - [x] Update `src/ui/state.test.ts`: the `toEqual` assertions on `initialState` (lines 11, 17, 37, 57) and the `before` literal (line 88) gain `vendor: null` / the right `dataStatus`. Add cases — valid input **with** an index yields the pinned `vendor`; valid input **without** an index yields `vendor: null`; `dataset-ready` fills `vendor` from an already-typed canonical; `dataset-ready` with empty input does not throw; `dataset-unavailable` clears `vendor` and sets `dataStatus`; input after `dataset-unavailable` still derives `status`/`canonical`/formats.
+- [x] Task 6: Wire the load + lookup in `src/main.ts` (AC: 1, 5, 6)
+  - [x] Keep `main.ts` as the composition hub: hold the loaded index in a module-level `let index: OuiIndex | null = null`; on module init dispatch `{ type: 'dataset-ready' }` through `nextState` passing the freshly loaded index, or `{ type: 'dataset-unavailable' }` in a `catch`. Do **not** store the index on `PopupState` (Critical Decision 3).
+  - [x] Pass `index` on every `input` dispatch so live typing resolves while the dataset is ready.
+  - [x] Await the load before the first `render` **only** if it does not delay first paint — prefer firing the load without blocking (the `loading` state renders nothing, so the popup is interactive immediately) and letting `dataset-ready` re-resolve. Either way the `input` listener must be attached before the load resolves, so a fast paste is never dropped.
+  - [x] Catch **all** load failures (rejected promise, thrown sync error) so the popup can never crash on a local-resource miss (AC6).
+- [x] Task 7: Minimal "database unavailable" render treatment (AC: 6)
+  - [x] In `src/ui/render.ts`, when `state.dataStatus === 'unavailable'`, un-hide the existing `#result-banner` and write the literal text `Database unavailable`; leave it hidden for `'loading'` and `'ready'`. Nothing else about the banner changes — the full status-lamp / triad / announcement anatomy is Story 2.3's, which will extend this same element. See Critical Decision 8.
+  - [x] Non-blocking: the invalid inline error, the three format rows, and the copy buttons keep their current behavior while unavailable.
+  - [x] Update `src/ui/render.test.ts`: add `vendor: null, dataStatus: 'ready'` to the `EMPTY` / `INVALID` / `VALID` fixtures (they are `PopupState` literals); add cases for `unavailable` (banner visible with the exact text), `loading` (hidden), and `ready` (hidden); confirm idempotence and the "never writes the input value" invariant still hold.
+- [x] Task 8: Measure load + lookup performance (AC: 5)
+  - [x] Add a perf/integration test that reads the **real** `public/oui-data.json`, `JSON.parse`s it, and builds the three Maps, asserting wall-clock under a deliberately generous ceiling (pin **2000 ms** — this guards the pathological O(n²) regression only; the NFR's < 100 ms is a human-perception target, not a CI-assertable number). Record the actual measured local build time in the story's Completion Notes.
+  - [x] Manually verify paste → result is perceptually instant in the built popup (`npm run build`, load unpacked `dist/`) and record the observation. NFR1 / SM-1.
+- [x] Task 9: Gates, guardrails, version bump (AC: 1–6)
+  - [x] `manifest.json` `version`: `0.7.0` → `0.8.0` (minor bump per story; `package.json` `version` untouched, per project-context).
+  - [x] Gates, all green before done: `npm run typecheck` (0 errors), `npm test` (existing 145 + the new lookup/loader/state/render cases), `npm run build` (succeeds; `dist/oui-data.json` still copied verbatim; `dist/` size unchanged within NFR5).
+  - [x] Guardrail greps: the **only** `fetch` in `src/` is the inline `chrome.runtime.getURL` call; no outbound URL literal anywhere in `src/`; no `chrome.storage`, no permissions, no background/content-script additions (`tests/privacy.guard.test.ts` enforces all of this — keep it green).
+  - [x] Record the pinned fixture values, the measured build time, and the manual paste-latency observation in Completion Notes.
 
 ### Dev Agent Record
 
-_(to be filled during dev-story)_
-
 #### Files Modified
+
+New:
+- `src/lib/lookup.ts` — pure `lookupVendor(canonical, index)` + `OuiIndex` + `VendorResult` (no imports of any kind)
+- `src/lib/lookup.test.ts` — 21 tests (unit layer + committed-artifact integration layer)
+- `src/data/load-oui-data.ts` — `loadOuiIndex(): Promise<OuiIndex>`, the system's single I/O boundary
+- `src/data/load-oui-data.test.ts` — 13 tests (stubbed `chrome`/`fetch`, real-artifact perf)
+
+Modified:
+- `src/lib/types.ts` — + `DataStatus`; `PopupState` gains required `vendor` and `dataStatus`
+- `src/ui/state.ts` — + `dataset-ready` / `dataset-unavailable` events, defaulted `index` param, vendor resolution
+- `src/ui/state.test.ts` — updated `PopupState` literals; + vendor-resolution, dataset-event, and index-contract coverage
+- `src/ui/render.ts` — + minimal `Database unavailable` treatment on the existing `#result-banner`
+- `src/ui/render.test.ts` — updated `PopupState` fixtures; + 8 unavailable-state tests
+- `src/main.ts` — index load lifecycle (fire-and-catch), `dispatch()` helper that threads the index into every `nextState` call
+- `manifest.json` — `0.7.0` → `0.8.0`
+
+Explicitly untouched (verified): `index.html`, `public/oui-data.json`, `scripts/**`, `tests/privacy.guard.test.ts`, `package.json`, `src/lib/parse.ts`, `src/lib/format.ts`.
+
 #### Change Log
+
+- 2026-10-11: Story 2.2 implemented — offline OUI dataset load (`src/data/load-oui-data.ts`) + pure longest-prefix vendor resolution (`src/lib/lookup.ts`), wired through an extended reducer into a minimal non-blocking "Database unavailable" state. Manifest → `0.8.0`.
+
 #### Completion Notes
+
+**Gates (all green):**
+- `npm run typecheck` — 0 errors
+- `npm test` — **199 passed** (145 baseline → 199; +54 = 21 lookup + 13 loader + 10 state + 8 render + 2 perf/extra)
+- `npm run build` — succeeds; `dist/oui-data.json` **byte-identical** to `public/oui-data.json`; `dist/` total **1,939,735 bytes** (~1.85 MB, NFR5 package ≤ ~3 MB); `dist/oui-data.json` gzip **592,464 bytes** (~0.58 MB, NFR5 DB ≤ ~2 MB)
+
+**AC satisfaction:**
+- **AC1** — `load-oui-data.ts:53` is the only `fetch` in `src/`, written inline as `fetch(chrome.runtime.getURL('oui-data.json'))` exactly as the privacy guard requires. Test asserts the resolved URL is `chrome-extension://test/oui-data.json`. Three Maps built in one pass; no module-scope cache (tested). Zero outbound requests: no `https?://` literal exists anywhere in `src/`, `chrome.*` is used only for `runtime.getURL`, and `tests/privacy.guard.test.ts` passes unchanged.
+- **AC2** — all three registries resolve: pinned MA-L `F01898` → "Apple, Inc.", MA-M `1006483` → "illuminous LLC", MA-S `001BC5000` → "Converging Systems Inc."
+- **AC3** — longest prefix wins via explicit branching (`lookup.ts:19-27`), never a chained `||`. Proven against real overlaps: `1006483ABCDE` picks MA-M over its "IEEE Registration Authority" /24, and `001BC5000123` picks MA-S over its "IEEE Registration Authority" /24 *with no /28 present*, so the cascade is not required.
+- **AC4** — exact signature `{ ok: true; vendor; prefix } | { ok: false; prefix }`; exact uppercase-hex string keys (a leading-zero key `00000A` test proves no numeric coercion); total function — malformed canonicals return `{ ok: false, prefix: '' }` and a 7-case `it.each` plus a never-throws loop cover it.
+- **AC5** — measured on the real 1,895,897-byte artifact: `JSON.parse` **61.9 ms** + three-Map build **110.9 ms** = **172.8 ms** one-time load (asserted < 2000 ms). Paste → result after load, measured over 2000 real `nextState(input, index)` calls via `tsx`: **avg 0.0058 ms, best 0.0019 ms, worst 0.96 ms** (worst is JIT warm-up) — ~17,000× headroom under the 100 ms NFR1 target. The one-time load runs fire-and-forget alongside first paint, so it never blocks interaction.
+- **AC6** — `main.ts` wraps the load in `try/catch` and maps any failure to `{ type: 'dataset-unavailable' }`; render un-hides the pre-existing `#result-banner` with `Database unavailable`. Non-blocking verified: with `dataStatus: 'unavailable'`, invalid input still shows "Not a valid MAC address" and the three format rows still render.
+
+**Pinned fixture values** (all verified against the committed artifact):
+- `F01898000000` → `{ ok: true, vendor: 'Apple, Inc.', prefix: 'F01898' }`
+- `1006483ABCDE` → `{ ok: true, vendor: 'illuminous LLC', prefix: '1006483' }`
+- `001BC5000123` → `{ ok: true, vendor: 'Converging Systems Inc.', prefix: '001BC5000' }`
+- `FFFFFF000001` → `{ ok: false, prefix: 'FFFFFF' }`
+- Map sizes cross-checked against `counts`: l24 40316, m28 6628, s36 7226 (sum 54170), 0 keys skipped.
+
+**Story typo corrected during dev:** the Task 2 MA-M fixture was written as `1006483ABCD`, which is **11** characters and therefore correctly rejected by the `/^[0-9A-F]{12}$/` guard. Used `1006483ABCDE` (12 chars) — the MA-M prefix (`1006483`) and vendor (`illuminous LLC`) are exactly as specified, so AC2/AC3 are unaffected.
+
+**Manual verification (Jared, 2026-10-11, unpacked `dist/` in Chrome):** speed good, results displayed on paste, `junk` showed "Not a valid MAC address", and with `dist/oui-data.json` temporarily renamed the popup showed the non-blocking "Database unavailable" banner while still formatting. NFR1 / SM-1 satisfied.
+
 #### Debug Log
+
+- RED → GREEN on `lookup.test.ts`: first run failed to import `./lookup` (module absent, as expected). After implementing, one failure — the MA-M fixture — traced to the 11-character canonical described above, not to the lookup logic.
+- RED → GREEN on `load-oui-data.test.ts`: privacy guard passed on the first attempt because the `fetch` call was written inline exactly as Critical Decision 6 requires; no iteration needed.
+- Initial `state.test.ts` run: 1 failure. My own test asserted `vendor` stayed null after `dataset-unavailable` while still passing an index — that over-specified behavior the story does not ask for (Task 5 says resolve whenever canonical *and* index are non-null; `main.ts` simply never holds an index while unavailable). Fixed the test, not the implementation.
+- Typecheck caught a real test-authoring bug: `fetchMock.mock.calls[0]?.[0]` on a zero-arg `vi.fn` typed its calls as `[]`. Typed the mock parameter (`(_url: string)`) instead.
+- While rewriting `state.test.ts` I initially flattened the three unicode fixtures (` `, `：`, `ﬀ`) to literals; verified with `cat -A` that the on-disk bytes are the original U+00A0 / U+FF1A / U+FB00 characters, so the cases are unchanged.
+
 
 ## Dev Local Learnings
 

@@ -41,9 +41,30 @@ function el<T extends HTMLElement>(root: HTMLElement, selector: string): T {
   return found;
 }
 
-const EMPTY: PopupState = { raw: '', status: 'empty', canonical: null, copy: IDLE_COPY };
-const INVALID: PopupState = { raw: 'junk', status: 'invalid', canonical: null, copy: IDLE_COPY };
-const VALID: PopupState = { raw: 'AABBCCDDEEFF', status: 'valid', canonical: 'AABBCCDDEEFF', copy: IDLE_COPY };
+const EMPTY: PopupState = {
+  raw: '',
+  status: 'empty',
+  canonical: null,
+  copy: IDLE_COPY,
+  vendor: null,
+  dataStatus: 'ready',
+};
+const INVALID: PopupState = {
+  raw: 'junk',
+  status: 'invalid',
+  canonical: null,
+  copy: IDLE_COPY,
+  vendor: null,
+  dataStatus: 'ready',
+};
+const VALID: PopupState = {
+  raw: 'AABBCCDDEEFF',
+  status: 'valid',
+  canonical: 'AABBCCDDEEFF',
+  copy: IDLE_COPY,
+  vendor: null,
+  dataStatus: 'ready',
+};
 
 describe('render', () => {
   let root: HTMLElement;
@@ -263,5 +284,67 @@ describe('render', () => {
     expect(css).toContain('.copy-button:focus-visible');
     expect(css).toContain('outline: none;');
     expect(css).toContain('box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);');
+  });
+
+  describe('database unavailable', () => {
+    const UNAVAILABLE: PopupState = { ...VALID, dataStatus: 'unavailable' };
+
+    it('un-hides the existing result banner with the exact message', () => {
+      render(root, UNAVAILABLE);
+      const banner = el<HTMLElement>(root, '#result-banner');
+      expect(banner.hidden).toBe(false);
+      expect(banner.textContent).toBe('Database unavailable');
+      expect(root.dataset.status).toBe('valid');
+    });
+
+    it('keeps the banner hidden while the data is loading', () => {
+      render(root, { ...VALID, dataStatus: 'loading' });
+      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    });
+
+    it('keeps the banner hidden when the data is ready', () => {
+      render(root, VALID);
+      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    });
+
+    it('stays non-blocking: the inline error and format rows keep working', () => {
+      render(root, { ...INVALID, dataStatus: 'unavailable' });
+      expect(el<HTMLElement>(root, '#input-error').textContent).toBe('Not a valid MAC address');
+      expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
+      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(false);
+    });
+
+    it('clears the banner text when the data becomes ready again', () => {
+      render(root, UNAVAILABLE);
+      render(root, VALID);
+      const banner = el<HTMLElement>(root, '#result-banner');
+      expect(banner.hidden).toBe(true);
+      expect(banner.textContent).toBe('');
+    });
+
+    it('renders the unavailable state idempotently', () => {
+      render(root, UNAVAILABLE);
+      const first = document.body.innerHTML;
+      render(root, UNAVAILABLE);
+      expect(document.body.innerHTML).toBe(first);
+    });
+
+    it('still never writes the uncontrolled input value', () => {
+      const inputEl = el<HTMLInputElement>(root, '#mac-input');
+      inputEl.value = 'typed-by-user';
+      render(root, UNAVAILABLE);
+      expect(inputEl.value).toBe('typed-by-user');
+    });
+
+    it('index.html still ships the banner with its accessibility contract', () => {
+      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+      const host = document.createElement('div');
+      host.innerHTML = html;
+      const banner = host.querySelector<HTMLElement>('#result-banner');
+      expect(banner).not.toBeNull();
+      expect(banner?.getAttribute('role')).toBe('status');
+      expect(banner?.getAttribute('aria-live')).toBe('polite');
+      expect(banner?.hasAttribute('hidden')).toBe(true);
+    });
   });
 });
