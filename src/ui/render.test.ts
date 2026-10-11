@@ -11,8 +11,14 @@ function fixture(): HTMLElement {
     <main class="popup" id="popup">
       <p class="wordmark">OUI Scout</p>
       <input class="mac-input" id="mac-input" type="text" placeholder="Paste a MAC address" />
-      <p class="input-error" id="input-error" role="status" aria-live="polite"></p>
-      <div class="result-banner" id="result-banner" role="status" aria-live="polite" hidden></div>
+      <div class="result-banner" id="result-banner" role="status" aria-live="polite">
+        <span class="status-lamp" id="banner-lamp" aria-hidden="true"></span>
+        <div class="result-body">
+          <span class="state-label" id="banner-label"></span>
+          <span class="result-value" id="banner-value"></span>
+        </div>
+        <span class="prefix" id="banner-prefix" aria-hidden="true"></span>
+      </div>
       <div class="format-rows" id="format-rows" hidden>
         <div class="format-row" data-format="colon">
           <span class="field-label">Colon</span>
@@ -57,13 +63,30 @@ const INVALID: PopupState = {
   vendor: null,
   dataStatus: 'ready',
 };
-const VALID: PopupState = {
+const FOUND: PopupState = {
   raw: 'AABBCCDDEEFF',
-  status: 'valid',
+  status: 'found',
+  canonical: 'AABBCCDDEEFF',
+  copy: IDLE_COPY,
+  vendor: { ok: true, vendor: 'Apple, Inc.', prefix: 'AABBCC' },
+  dataStatus: 'ready',
+};
+const MISS: PopupState = {
+  raw: '998877665544',
+  status: 'miss',
+  canonical: '998877665544',
+  copy: IDLE_COPY,
+  vendor: { ok: false, prefix: '998877' },
+  dataStatus: 'ready',
+};
+/* A parsed canonical whose lookup is not yet conclusive. */
+const PENDING: PopupState = {
+  raw: 'AABBCCDDEEFF',
+  status: 'miss',
   canonical: 'AABBCCDDEEFF',
   copy: IDLE_COPY,
   vendor: null,
-  dataStatus: 'ready',
+  dataStatus: 'loading',
 };
 
 describe('render', () => {
@@ -73,29 +96,31 @@ describe('render', () => {
     root = fixture();
   });
 
-  it('renders the empty resting state: no error, no rows, no banner', () => {
+  it('renders the empty resting state: no rows, cleared banner, no data-state', () => {
     render(root, EMPTY);
     expect(root.dataset.status).toBe('empty');
-    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
-    expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    const banner = el<HTMLElement>(root, '#result-banner');
+    expect(banner.hasAttribute('data-state')).toBe(false);
+    expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
+    expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('');
+    expect(el<HTMLElement>(root, '#banner-lamp').hidden).toBe(true);
   });
 
-  it('renders invalid: shows the exact inline error, keeps the banner hidden', () => {
+  it('renders invalid: the banner owns the message that used to sit under the input', () => {
     render(root, INVALID);
     expect(root.dataset.status).toBe('invalid');
-    const error = el<HTMLElement>(root, '#input-error');
-    expect(error.textContent).toBe('Not a valid MAC address');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
-    expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Not a valid MAC address');
+    expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('Invalid');
+    expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('invalid');
   });
 
-  it('renders valid: clears the error, reveals the rows container, no banner', () => {
-    render(root, VALID);
-    expect(root.dataset.status).toBe('valid');
-    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
+  it('renders found: rows revealed and the banner names the vendor', () => {
+    render(root, FOUND);
+    expect(root.dataset.status).toBe('found');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
-    expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('found');
   });
 
   it('is idempotent: rendering the same state twice yields identical DOM', () => {
@@ -108,7 +133,7 @@ describe('render', () => {
   it('never writes the uncontrolled input value', () => {
     const input = el<HTMLInputElement>(root, '#mac-input');
     input.value = 'typed-by-user';
-    render(root, VALID);
+    render(root, FOUND);
     expect(input.value).toBe('typed-by-user');
   });
 
@@ -116,12 +141,13 @@ describe('render', () => {
     render(root, INVALID);
     render(root, EMPTY);
     expect(root.dataset.status).toBe('empty');
-    expect(el<HTMLElement>(root, '#input-error').textContent).toBe('');
     expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(true);
+    expect(el<HTMLElement>(root, '#result-banner').hasAttribute('data-state')).toBe(false);
+    expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
   });
 
-  it('fills all three rows in order on valid', () => {
-    render(root, VALID);
+  it('fills all three rows in order on found', () => {
+    render(root, FOUND);
     const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
     expect(readouts.map((r) => r.textContent)).toEqual([
       'AA:BB:CC:DD:EE:FF',
@@ -131,21 +157,21 @@ describe('render', () => {
   });
 
   it('clears rows to an em dash on invalid (no stale value)', () => {
-    render(root, VALID);
+    render(root, FOUND);
     render(root, INVALID);
     const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
     for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
   it('clears rows to an em dash on empty (no stale value)', () => {
-    render(root, VALID);
+    render(root, FOUND);
     render(root, EMPTY);
     const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
     for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
-  it('valid + idle flags: three enabled "Copy" buttons with no data-copy', () => {
-    render(root, VALID);
+  it('found + idle flags: three enabled "Copy" buttons with no data-copy', () => {
+    render(root, FOUND);
     const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
     expect(btns).toHaveLength(3);
     for (const btn of btns) {
@@ -155,8 +181,8 @@ describe('render', () => {
     }
   });
 
-  it('valid + copied flag: only that row shows "Copied" with data-copy', () => {
-    const state: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+  it('found + copied flag: only that row shows "Copied" with data-copy', () => {
+    const state: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
     render(root, state);
     const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
     const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
@@ -170,8 +196,8 @@ describe('render', () => {
     for (const btn of [colon, plain, cisco]) expect(btn.disabled).toBe(false);
   });
 
-  it('valid + failed flag: label stays "Copy" and data-copy="failed"', () => {
-    const state: PopupState = { ...VALID, copy: { colon: 'idle', plain: 'failed', cisco: 'idle' } };
+  it('found + failed flag: label stays "Copy" and data-copy="failed"', () => {
+    const state: PopupState = { ...FOUND, copy: { colon: 'idle', plain: 'failed', cisco: 'idle' } };
     render(root, state);
     const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
     expect(plain.textContent).toBe('Copy');
@@ -191,7 +217,7 @@ describe('render', () => {
   });
 
   it('a copied confirmation does not survive an edit (label returns to "Copy")', () => {
-    const copied: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'copied', cisco: 'copied' } };
+    const copied: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'copied', cisco: 'copied' } };
     render(root, copied);
     render(root, INVALID);
     for (const btn of Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'))) {
@@ -200,7 +226,7 @@ describe('render', () => {
   });
 
   it('re-rendering an unchanged copied state keeps "Copied" (idempotent)', () => {
-    const copied: PopupState = { ...VALID, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+    const copied: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
     render(root, copied);
     render(root, copied);
     expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').textContent).toBe('Copied');
@@ -217,13 +243,22 @@ describe('render', () => {
       </main>
     `;
     const rootEl = document.getElementById('popup') as HTMLElement;
-    render(rootEl, VALID);
+    render(rootEl, FOUND);
     expect(rootEl.querySelector<HTMLElement>('#format-rows .readout')?.textContent).toBe('—');
   });
 
   it('index.html contains every id the renderer wires', () => {
     const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
-    for (const id of ['popup', 'mac-input', 'input-error', 'format-rows', 'result-banner']) {
+    for (const id of [
+      'popup',
+      'mac-input',
+      'format-rows',
+      'result-banner',
+      'banner-lamp',
+      'banner-label',
+      'banner-value',
+      'banner-prefix',
+    ]) {
       expect(html).toContain(`id="${id}"`);
     }
   });
@@ -245,7 +280,7 @@ describe('render', () => {
     }
   });
 
-  it('index.html carries the accessibility contracts (Story 1.7)', () => {
+  it('index.html carries the accessibility contracts (Story 1.7 + Story 2.3)', () => {
     const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
     const host = document.createElement('div');
     host.innerHTML = html;
@@ -253,18 +288,22 @@ describe('render', () => {
     expect(input).not.toBeNull();
     expect(input?.hasAttribute('autofocus')).toBe(true);
     expect(input?.getAttribute('aria-label')).toBe('MAC address');
-    expect(input?.getAttribute('aria-describedby')).toBe('input-error');
-    const error = host.querySelector<HTMLElement>('#input-error');
-    expect(error).not.toBeNull();
-    expect(error?.getAttribute('role')).toBe('status');
-    expect(error?.getAttribute('aria-live')).toBe('polite');
-    expect(error?.hasAttribute('hidden')).toBe(false);
-    expect(error?.textContent).toBe('');
+    expect(input?.getAttribute('aria-describedby')).toBe('result-banner');
+    expect(host.querySelector('#input-error')).toBeNull();
+
     const banner = host.querySelector<HTMLElement>('#result-banner');
     expect(banner).not.toBeNull();
     expect(banner?.getAttribute('role')).toBe('status');
     expect(banner?.getAttribute('aria-live')).toBe('polite');
-    expect(banner?.hasAttribute('hidden')).toBe(true);
+    expect(banner?.hasAttribute('hidden')).toBe(false);
+
+    const lamp = host.querySelector<HTMLElement>('#banner-lamp');
+    expect(lamp?.getAttribute('aria-hidden')).toBe('true');
+    expect(host.querySelector('#banner-label')).not.toBeNull();
+    expect(host.querySelector('#banner-value')).not.toBeNull();
+    const prefix = host.querySelector<HTMLElement>('#banner-prefix');
+    expect(prefix?.getAttribute('aria-hidden')).toBe('true');
+
     expect(host.querySelector('[tabindex]')).toBeNull();
     const btns = Array.from(host.querySelectorAll<HTMLButtonElement>('button.copy-button[data-format]'));
     expect(btns.map((b) => b.dataset.format)).toEqual(['colon', 'plain', 'cisco']);
@@ -286,47 +325,176 @@ describe('render', () => {
     expect(css).toContain('box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 22%, transparent);');
   });
 
-  describe('database unavailable', () => {
-    const UNAVAILABLE: PopupState = { ...VALID, dataStatus: 'unavailable' };
+  describe('result banner outcomes (Story 2.3)', () => {
+    it('announces found as the exact label + vendor', () => {
+      render(root, FOUND);
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('Found');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Apple, Inc.');
+    });
 
-    it('un-hides the existing result banner with the exact message', () => {
-      render(root, UNAVAILABLE);
+    it('announces miss as the exact label + "Unknown vendor"', () => {
+      render(root, MISS);
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('Not found');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Unknown vendor');
+    });
+
+    it('announces invalid as the exact label + message', () => {
+      render(root, INVALID);
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('Invalid');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Not a valid MAC address');
+    });
+
+    it('renders the vendor prefix in found and the OUI in miss', () => {
+      render(root, FOUND);
+      expect(el<HTMLElement>(root, '#banner-prefix').textContent).toBe('AABBCC');
+      render(root, MISS);
+      expect(el<HTMLElement>(root, '#banner-prefix').textContent).toBe('998877');
+    });
+
+    it('announces exactly the label then the value, since the prefix is aria-hidden', () => {
+      render(root, FOUND);
+      const foundBanner = el<HTMLElement>(root, '#result-banner');
+      expect(
+        `${el(foundBanner, '#banner-label').textContent}, ${el(foundBanner, '#banner-value').textContent}`,
+      ).toBe('Found, Apple, Inc.');
+      render(root, MISS);
+      const missBanner = el<HTMLElement>(root, '#result-banner');
+      expect(
+        `${el(missBanner, '#banner-label').textContent}, ${el(missBanner, '#banner-value').textContent}`,
+      ).toBe('Not found, Unknown vendor');
+    });
+
+    it('leaves all three copy buttons enabled with working readouts on miss', () => {
+      render(root, MISS);
+      const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
+      expect(btns).toHaveLength(3);
+      for (const btn of btns) {
+        expect(btn.disabled).toBe(false);
+        expect(btn.textContent).toBe('Copy');
+      }
+      const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
+      expect(readouts.map((r) => r.textContent)).toEqual([
+        '99:88:77:66:55:44',
+        '998877665544',
+        '9988.7766.5544',
+      ]);
+    });
+
+    it('shows the Copied confirmation on a miss, not only on a found', () => {
+      const state: PopupState = { ...MISS, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+      render(root, state);
+      const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
+      const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
+      expect(colon.textContent).toBe('Copied');
+      expect(colon.dataset.copy).toBe('copied');
+      expect(colon.disabled).toBe(false);
+      expect(plain.textContent).toBe('Copy');
+    });
+
+    it('keys the banner triad on data-state for each of the three outcomes', () => {
+      for (const [state, key] of [
+        [FOUND, 'found'],
+        [MISS, 'miss'],
+        [INVALID, 'invalid'],
+      ] as const) {
+        render(root, state);
+        expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe(key);
+        expect(root.dataset.status).toBe(key);
+      }
+    });
+
+    it('shows the lamp for each of the three outcomes only', () => {
+      for (const state of [FOUND, MISS, INVALID]) {
+        render(root, state);
+        expect(el<HTMLElement>(root, '#banner-lamp').hidden).toBe(false);
+      }
+      render(root, EMPTY);
+      expect(el<HTMLElement>(root, '#banner-lamp').hidden).toBe(true);
+    });
+
+    it('never hides the banner element itself, so the live region can always announce', () => {
+      for (const state of [EMPTY, PENDING, FOUND, MISS, INVALID]) {
+        render(root, state);
+        expect(el<HTMLElement>(root, '#result-banner').hasAttribute('hidden')).toBe(false);
+      }
+    });
+
+    it('clears the banner for a canonical whose lookup is not yet conclusive', () => {
+      render(root, PENDING);
       const banner = el<HTMLElement>(root, '#result-banner');
-      expect(banner.hidden).toBe(false);
-      expect(banner.textContent).toBe('Database unavailable');
-      expect(root.dataset.status).toBe('valid');
+      expect(banner.hasAttribute('data-state')).toBe(false);
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#banner-lamp').hidden).toBe(true);
     });
 
-    it('keeps the banner hidden while the data is loading', () => {
-      render(root, { ...VALID, dataStatus: 'loading' });
-      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    it('clears the banner when the data becomes ready and the prefix is unknown', () => {
+      render(root, PENDING);
+      render(root, MISS);
+      expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('miss');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Unknown vendor');
     });
 
-    it('keeps the banner hidden when the data is ready', () => {
-      render(root, VALID);
-      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(true);
+    it('releases a pre-load pending MAC to found once the dataset arrives', () => {
+      render(root, PENDING);
+      render(root, FOUND);
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Apple, Inc.');
+      expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('found');
     });
 
-    it('stays non-blocking: the inline error and format rows keep working', () => {
-      render(root, { ...INVALID, dataStatus: 'unavailable' });
-      expect(el<HTMLElement>(root, '#input-error').textContent).toBe('Not a valid MAC address');
-      expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
-      expect(el<HTMLElement>(root, '#result-banner').hidden).toBe(false);
-    });
-
-    it('clears the banner text when the data becomes ready again', () => {
-      render(root, UNAVAILABLE);
-      render(root, VALID);
-      const banner = el<HTMLElement>(root, '#result-banner');
-      expect(banner.hidden).toBe(true);
-      expect(banner.textContent).toBe('');
-    });
-
-    it('renders the unavailable state idempotently', () => {
-      render(root, UNAVAILABLE);
+    it('renders found idempotently', () => {
+      render(root, FOUND);
       const first = document.body.innerHTML;
-      render(root, UNAVAILABLE);
+      render(root, FOUND);
       expect(document.body.innerHTML).toBe(first);
+    });
+
+    it('renders miss idempotently', () => {
+      render(root, MISS);
+      const first = document.body.innerHTML;
+      render(root, MISS);
+      expect(document.body.innerHTML).toBe(first);
+    });
+
+    it('keeps the banner cleared from found → empty with no stale vendor', () => {
+      render(root, FOUND);
+      render(root, EMPTY);
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#result-banner').hasAttribute('data-state')).toBe(false);
+    });
+
+    it('never invents a vendor when the state is internally inconsistent', () => {
+      render(root, { ...FOUND, status: 'found', vendor: null });
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#result-banner').hasAttribute('data-state')).toBe(false);
+    });
+  });
+
+  describe('database unavailable', () => {
+    const UNAVAILABLE: PopupState = { ...MISS, vendor: null, dataStatus: 'unavailable' };
+
+    it('shows the exact message with no triad and no lamp', () => {
+      render(root, UNAVAILABLE);
+      const banner = el<HTMLElement>(root, '#result-banner');
+      expect(banner.dataset.state).toBe('unavailable');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Database unavailable');
+      expect(el<HTMLElement>(root, '#banner-label').textContent).toBe('');
+      expect(el<HTMLElement>(root, '#banner-lamp').hidden).toBe(true);
+    });
+
+    it('stays quiet while the data is loading', () => {
+      render(root, { ...MISS, vendor: null, dataStatus: 'loading' });
+      const banner = el<HTMLElement>(root, '#result-banner');
+      expect(banner.hasAttribute('data-state')).toBe(false);
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
+    });
+
+    it('invalid outranks the unavailable dataset', () => {
+      render(root, { ...INVALID, dataStatus: 'unavailable' });
+      expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('invalid');
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Not a valid MAC address');
+      expect(el<HTMLElement>(root, '#format-rows').hidden).toBe(false);
     });
 
     it('still never writes the uncontrolled input value', () => {
@@ -336,15 +504,18 @@ describe('render', () => {
       expect(inputEl.value).toBe('typed-by-user');
     });
 
-    it('index.html still ships the banner with its accessibility contract', () => {
-      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
-      const host = document.createElement('div');
-      host.innerHTML = html;
-      const banner = host.querySelector<HTMLElement>('#result-banner');
-      expect(banner).not.toBeNull();
-      expect(banner?.getAttribute('role')).toBe('status');
-      expect(banner?.getAttribute('aria-live')).toBe('polite');
-      expect(banner?.hasAttribute('hidden')).toBe(true);
+    it('clears the unavailable message once the data is ready again', () => {
+      render(root, UNAVAILABLE);
+      render(root, MISS);
+      expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('Unknown vendor');
+      expect(el<HTMLElement>(root, '#result-banner').dataset.state).toBe('miss');
+    });
+
+    it('renders the unavailable state idempotently', () => {
+      render(root, UNAVAILABLE);
+      const first = document.body.innerHTML;
+      render(root, UNAVAILABLE);
+      expect(document.body.innerHTML).toBe(first);
     });
   });
 });

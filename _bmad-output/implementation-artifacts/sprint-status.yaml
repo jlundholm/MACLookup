@@ -65,7 +65,7 @@ development_status:
   epic-2: in-progress
   2-1-generate-the-bundled-oui-database-at-build-time: done
   2-2-load-the-dataset-and-resolve-the-vendor-with-longest-prefix-match: done
-  2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner: backlog
+  2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner: review
   epic-2-retrospective: optional
 
   # Epic 3: Ship it to the Chrome Web Store (CONDITIONAL — publish-only)

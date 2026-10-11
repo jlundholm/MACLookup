@@ -19,17 +19,17 @@
         autocorrect="off"
         spellcheck="false"
         aria-label="MAC address"
-        aria-describedby="input-error"
+        aria-describedby="result-banner"
         autofocus
       />
-      <p class="input-error" id="input-error" role="status" aria-live="polite"></p>
-      <div
-        class="result-banner"
-        id="result-banner"
-        role="status"
-        aria-live="polite"
-        hidden
-      ></div>
+      <div class="result-banner" id="result-banner" role="status" aria-live="polite">
+        <span class="status-lamp" id="banner-lamp" aria-hidden="true"></span>
+        <div class="result-body">
+          <span class="state-label" id="banner-label"></span>
+          <span class="result-value" id="banner-value"></span>
+        </div>
+        <span class="prefix" id="banner-prefix" aria-hidden="true"></span>
+      </div>
       <div class="format-rows" id="format-rows" hidden>
         <div class="format-row" data-format="colon">
           <span class="field-label">Colon</span>

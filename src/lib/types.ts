@@ -4,7 +4,7 @@ export type ParseResult =
   | { ok: true; canonical: string }
   | { ok: false; reason: 'invalid' };
 
-export type MacStatus = 'empty' | 'valid' | 'invalid';
+export type MacStatus = 'empty' | 'found' | 'miss' | 'invalid';
 
 export type DataStatus = 'loading' | 'ready' | 'unavailable';
 

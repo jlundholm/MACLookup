@@ -196,14 +196,19 @@ body {
   align-self: center;
 }
 
-/* Hover keys on 'valid' only: buttons are disabled on every other status,
-   so an invalid-hover rule would be dead CSS. Excluded when a data-copy state
-   is showing (copied/failed) so the state rules are not masked by the cursor,
-   and excluded while keyboard-focused (Story 1.7) so the neutral focus ring is
-   never overridden by the status-colored hover border. */
-.popup[data-status='valid'] .copy-button:not(:disabled):not([data-copy]):not(:focus-visible):hover {
+/* Hover takes the ACTIVE status colour (DESIGN: hover-foreground-found / -miss).
+   Buttons are disabled on 'invalid'/'empty', so only the two outcome states can
+   hover. Excluded when a data-copy state is showing (copied/failed) so the state
+   rules are not masked by the cursor, and excluded while keyboard-focused (Story
+   1.7) so the neutral focus ring is never overridden by the status colour. */
+.popup[data-status='found'] .copy-button:not(:disabled):not([data-copy]):not(:focus-visible):hover {
   color: var(--color-found-fg);
   border-color: var(--color-found-fg);
+}
+
+.popup[data-status='miss'] .copy-button:not(:disabled):not([data-copy]):not(:focus-visible):hover {
+  color: var(--color-miss-fg);
+  border-color: var(--color-miss-fg);
 }
 
 .copy-button[data-copy='copied'] {
@@ -240,24 +245,74 @@ body {
   color: var(--color-invalid-fg);
 }
 
-.input-error {
-  margin: 0;
-  color: var(--color-invalid-fg);
+/* Result banner (Story 2.3, UX-DR4) — the hero. Exactly one, permanently present;
+   render() writes into its #banner-* children and sets or removes `data-state`.
+   At rest (no `data-state`) it leaves the .popup flex flow the same way 1.7
+   neutralises .input-error, so it never contributes a phantom gap — but it is
+   never `hidden`, because a hidden aria-live region cannot announce (the 1.1/1.7
+   landmine recorded in deferred-work.md). A static skeleton means the element is
+   never CSS `:empty`, so layout is driven by the attribute instead — the
+   "land its own layout" branch of that same note.
+   `data-state="unavailable"` is laid out in flow but deliberately carries no
+   triad: DESIGN permits exactly three status colours. */
+.result-banner {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  user-select: text;
 }
 
-/* Story 1.7 — #input-error is a permanently-present polite live region whose
-   text is written/cleared by render (never hidden-with-content). While empty it
-   must not participate in the .popup flex column, or it would add a phantom
-   gap at rest and between input/rows. Absolute positioning removes it from the
-   flex flow while keeping it in the accessibility tree (unlike display:none);
-   once it has content, :empty stops matching and it returns to normal flow. */
-.input-error:empty {
+.result-banner:not([data-state]) {
   position: absolute;
 }
 
+.result-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.result-value {
+  overflow-wrap: anywhere;
+}
+
+.result-banner[data-state='found'] {
+  background: var(--color-found-bg);
+  border-color: var(--color-found-border);
+  color: var(--color-found-fg);
+}
+
+.result-banner[data-state='miss'] {
+  background: var(--color-miss-bg);
+  border-color: var(--color-miss-border);
+  color: var(--color-miss-fg);
+}
+
+.result-banner[data-state='invalid'] {
+  background: var(--color-invalid-bg);
+  border-color: var(--color-invalid-border);
+  color: var(--color-invalid-fg);
+}
+
+/* Status lamp (Story 2.3, UX-DR5) — the outcome's colour source; decorative, so
+   the .state-label text stays authoritative and WCAG 1.4.1 is satisfied. */
+.status-lamp {
+  width: 13px;
+  height: 13px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);
+  flex: none;
+}
+
 /* Format row (Story 1.5) — field bg, 1px border, rounded.md, 4px left status rail,
-   field-label over readout. The rail keys on the INTERIM 'valid'/'invalid' status
-   because data-status is never 'found' until Story 2.3 re-points these rules. */
+   field-label over readout value. The rail keys on the OUTCOME status; Story 2.3
+   replaced the interim 'valid'/'invalid' keying with found/miss/invalid. */
 .format-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -288,8 +343,12 @@ body {
   grid-area: copy;
 }
 
-.popup[data-status='valid'] .format-row {
+.popup[data-status='found'] .format-row {
   border-left-color: var(--color-found-fg);
+}
+
+.popup[data-status='miss'] .format-row {
+  border-left-color: var(--color-miss-fg);
 }
 
 .popup[data-status='invalid'] .format-row {
@@ -306,7 +365,8 @@ body {
   color: var(--color-text-muted);
 }
 
-.popup[data-status='valid'] .format-row .readout {
+.popup[data-status='found'] .format-row .readout,
+.popup[data-status='miss'] .format-row .readout {
   color: var(--color-text);
 }
 

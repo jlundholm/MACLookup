@@ -30,6 +30,18 @@ function resolveVendor(
   return lookupVendor(canonical, index);
 }
 
+/* Story 2.3 (architecture.md:323): status is the four-value union derived from the
+   parse result AND the lookup outcome. 'empty'/'invalid' are parse-owned and never
+   move; a parsed canonical with a conclusive hit is 'found', anything else that
+   parsed is 'miss' (including a valid MAC whose lookup is not yet conclusive). */
+function rederiveStatus(
+  status: MacStatus,
+  vendor: PopupState['vendor'],
+): MacStatus {
+  if (status === 'empty' || status === 'invalid') return status;
+  return vendor !== null && vendor.ok ? 'found' : 'miss';
+}
+
 export function nextState(
   state: PopupState,
   event: PopupEvent,
@@ -42,30 +54,43 @@ export function nextState(
         return { ...state, raw, status: 'empty', canonical: null, vendor: null, copy: IDLE_COPY };
       }
       const parsed = parseMac(raw);
-      const status: MacStatus = parsed.ok ? 'valid' : 'invalid';
       const canonical = parsed.ok ? parsed.canonical : null;
+      const vendor = resolveVendor(canonical, index);
+      const status: MacStatus = !parsed.ok
+        ? 'invalid'
+        : vendor !== null && vendor.ok
+          ? 'found'
+          : 'miss';
       return {
         ...state,
         raw,
         status,
         canonical,
-        vendor: resolveVendor(canonical, index),
+        vendor,
         copy: IDLE_COPY,
       };
     }
     case 'copy-resolved': {
-      if (state.status !== 'valid' || state.canonical !== event.canonical) return state;
+      if (
+        (state.status !== 'found' && state.status !== 'miss') ||
+        state.canonical !== event.canonical
+      ) {
+        return state;
+      }
       return { ...state, copy: { ...state.copy, [event.format]: event.outcome } };
     }
     case 'copy-timeout':
       return { ...state, copy: { ...state.copy, [event.format]: 'idle' } };
-    case 'dataset-ready':
+    case 'dataset-ready': {
+      const vendor = resolveVendor(state.canonical, index);
+      return { ...state, dataStatus: 'ready', vendor, status: rederiveStatus(state.status, vendor) };
+    }
+    case 'dataset-unavailable':
       return {
         ...state,
-        dataStatus: 'ready',
-        vendor: resolveVendor(state.canonical, index),
+        dataStatus: 'unavailable',
+        vendor: null,
+        status: rederiveStatus(state.status, null),
       };
-    case 'dataset-unavailable':
-      return { ...state, dataStatus: 'unavailable', vendor: null };
   }
 }

@@ -1,5 +1,19 @@
 # Deferred Work
 
+> **Resolved by Story 2.3 (vendor banner):** the Story 1.1 **banner**
+> live-region note — re-scoped to 2.3 by Story 1.7 — is discharged. 2.3 makes
+> `#result-banner` the single content-driven live region the note asked for:
+> permanently present, never `hidden`, with its `#banner-lamp`/`#banner-label`/
+> `#banner-value`/`#banner-prefix` children written and cleared by `render()`.
+> Because 2.3 ships a static skeleton inside the banner, the element is never
+> CSS `:empty`, so the phantom-flex-gap branch of the note ("the banner must do
+> the same or land its own layout") is met by its own layout instead: render
+> sets or removes `banner.dataset.state`, and
+> `.result-banner:not([data-state]) { position: absolute; }` takes the idle
+> banner out of the `.popup` flex flow without ever hiding a live region. The
+> superseded `#input-error` element and its `.input-error` rules are deleted —
+> the banner now owns the invalid message.
+
 > **Resolved by Story 1.8 (privacy guard suite, 2026-10-11):** the Story 1.1
 > "automated guard for the zero-permission / no-background / offline posture"
 > entry is discharged — `tests/privacy.guard.test.ts` now asserts the manifest
@@ -25,15 +39,8 @@
 > `@media (forced-colors: active)` focus path is added for both `.mac-input` and
 > `.copy-button`. The Story 1.2 entry is **partially** discharged: its
 > forced-colors focus concern is resolved by the same 1.7 media block, while its
-> zoom/fixed-px clipping concern is **re-deferred** (below). The Story 1.1
-> **banner** live-region note is re-scoped to Story 2.3: when 2.3 first writes
-> into `#result-banner`, use the canonical content-driven pattern now proven on
-> `#input-error` — a permanently-present region with text written/cleared, never
-> hidden-with-content (an always-rendered empty element is a flex item under
-> `.popup { gap }`, so 1.7 neutralizes the empty state with
-> `.input-error:empty { position: absolute }` — the banner must do the same or
-> land its own layout). The Story 1.2 zoom/fixed-px clipping entry is
-> **re-deferred**: properly fixing text scaling means re-basing the type system
+> zoom/fixed-px clipping concern is **re-deferred** (below). The Story 1.2
+> zoom/fixed-px clipping entry is **re-deferred**: properly fixing text scaling means re-basing the type system
 > on `rem` plus shell changes across every component — a cross-cutting visual
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.

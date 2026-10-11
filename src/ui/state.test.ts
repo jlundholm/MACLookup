@@ -49,10 +49,10 @@ describe('nextState', () => {
     '  AA:BB:CC:DD:EE:FF  ',
     '\nAABBCCDDEEFF\n',
     'AA:BB-CC.DD EE:FF',
-  ])('maps valid form %j to valid + canonical', (raw) => {
+  ])('maps valid form %j to a parsed canonical', (raw) => {
     expect(inputFrom(initialState, raw)).toEqual({
       raw,
-      status: 'valid',
+      status: 'miss',
       canonical: 'AABBCCDDEEFF',
       copy: IDLE_COPY,
       vendor: null,
@@ -108,11 +108,11 @@ describe('nextState', () => {
     });
   });
 
-  it('restores valid after invalid without reload semantics', () => {
+  it('restores a parsed canonical after invalid', () => {
     const invalid = inputFrom(initialState, 'junk');
     expect(inputFrom(invalid, 'AABBCCDDEEFF')).toEqual({
       raw: 'AABBCCDDEEFF',
-      status: 'valid',
+      status: 'miss',
       canonical: 'AABBCCDDEEFF',
       copy: IDLE_COPY,
       vendor: null,
@@ -165,6 +165,53 @@ describe('nextState', () => {
     });
   });
 
+  describe('status union derivation (Story 2.3)', () => {
+    it('derives found when the prefix resolves', () => {
+      expect(inputFrom(initialState, 'AABBCCDDEEFF', FIXTURE).status).toBe('found');
+    });
+
+    it('derives miss when the prefix is absent', () => {
+      expect(inputFrom(initialState, '998877665544', FIXTURE).status).toBe('miss');
+    });
+
+    it('derives miss (not found, not empty) for a valid MAC with no index yet', () => {
+      expect(inputFrom(initialState, 'AABBCCDDEEFF').status).toBe('miss');
+    });
+
+    it('derives miss for a valid MAC while the data is unavailable', () => {
+      const unavailable = nextState(initialState, { type: 'dataset-unavailable' }, FIXTURE);
+      expect(inputFrom(unavailable, 'AABBCCDDEEFF').status).toBe('miss');
+    });
+
+    it('derives invalid for a failed parse even with an index', () => {
+      expect(inputFrom(initialState, 'junk', FIXTURE).status).toBe('invalid');
+    });
+
+    it('derives empty for an empty field', () => {
+      expect(inputFrom(initialState, '').status).toBe('empty');
+    });
+
+    it('flips a pre-load pasted MAC from miss to found when the dataset arrives', () => {
+      const typed = inputFrom(initialState, 'AABBCCDDEEFF');
+      expect(typed.status).toBe('miss');
+      const ready = nextState(typed, { type: 'dataset-ready' }, FIXTURE);
+      expect(ready.status).toBe('found');
+    });
+
+    it('keeps a pre-load pasted miss as miss when the dataset arrives', () => {
+      const typed = inputFrom(initialState, '998877665544');
+      expect(typed.status).toBe('miss');
+      const ready = nextState(typed, { type: 'dataset-ready' }, FIXTURE);
+      expect(ready.status).toBe('miss');
+    });
+
+    it('does not store the outcome in a second field', () => {
+      const state = inputFrom(initialState, 'AABBCCDDEEFF', FIXTURE);
+      expect(Object.hasOwn(state, 'outcome')).toBe(false);
+      expect(Object.hasOwn(state, 'result')).toBe(false);
+    });
+  });
+
   describe('dataset events', () => {
     it('dataset-ready marks the data ready', () => {
       const ready = nextState(initialState, { type: 'dataset-ready' }, FIXTURE);
@@ -196,7 +243,7 @@ describe('nextState', () => {
       const unavailable = nextState(initialState, { type: 'dataset-unavailable' }, FIXTURE);
       expect(unavailable.dataStatus).toBe('unavailable');
       const typed = inputFrom(unavailable, 'AABBCCDDEEFF');
-      expect(typed.status).toBe('valid');
+      expect(typed.status).toBe('miss');
       expect(typed.canonical).toBe('AABBCCDDEEFF');
       expect(typed.vendor).toBeNull();
     });
@@ -266,6 +313,22 @@ describe('nextState', () => {
         expect(resolved).toBe(state);
       },
     );
+
+    it.each([
+      ['found', 'AABBCCDDEEFF'],
+      ['miss', '998877665544'],
+    ] as const)('copy-resolved is accepted when status is %j', (status, raw) => {
+      const state = inputFrom(initialState, raw, FIXTURE);
+      expect(state.status).toBe(status);
+      const resolved = nextState(state, {
+        type: 'copy-resolved',
+        format: 'colon',
+        canonical: raw,
+        outcome: 'copied',
+      });
+      expect(resolved.copy).toEqual({ colon: 'copied', plain: 'idle', cisco: 'idle' });
+      expect(resolved).not.toBe(state);
+    });
 
     it('copy-timeout clears only the named format', () => {
       const valid = inputFrom(initialState, CANON);
