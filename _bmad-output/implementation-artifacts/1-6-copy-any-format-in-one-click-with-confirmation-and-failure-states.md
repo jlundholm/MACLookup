@@ -4,7 +4,7 @@ baseline_commit: fe656580e2495f11805c0e6a2314c91a82448e06
 
 # Story 1.6: Copy any format in one click, with confirmation and failure states
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -258,7 +258,7 @@ opencode / mimo-v2.6-flash-free
 - RED→GREEN per task: (1) `state.test.ts` +7 cases failed (import of missing `IDLE_COPY` is `undefined` under esbuild; new assertions fail) → 33 green after `types.ts`+`state.ts`; the mechanical `copy: IDLE_COPY` literals were vacuous until then (`toEqual` treats `undefined` ≈ missing) — the new tests were the real signal. (2) Row drift test failed (no buttons in `index.html`) → 12 green after markup. (3) `render.test.ts` +5 cases, 3 failed (copied/failed/invalid button states) → 17 green after the render button loop.
 - Unicode-escape cleanup: during the `state.test.ts` fixture edit the three invalid-input literals (`\u00A0` NBSP, `\uFF1A` fullwidth colon, `\uFB00` ligature) were accidentally written as literal characters; restored the exact escape sequences so the diff stays minimal. Runtime-identical, but the original source style is preserved.
 - Final gates: `npm run typecheck` → 0 errors; `npm test` → **4 files, 93 tests passed** (38 parse + 33 state + 17 render + 5 format); `npm run build` → success, `dist/manifest.json` version `0.4.0`.
-- **Post-review patches (bmad-code-review, 3 layers — Blind Hunter, Edge Case Hunter, Acceptance Auditor):** 20 raw → 8 unique. 6 patched now (grid auto-flow wrap defect — CAUGHT because a 2-col grid with 3 auto-placed children wraps the third to row 2; `grid-template-areas` fixes it; hover rule masking `data-copy` states — cursor hover beat the `[data-copy='failed']` fill via specificity; unguarded `data-format` in the click handler writing literal "undefined"; 2 new tests; microcopy canon now lists "Copy"), 1 deferred (`E_CLIP_1`: a `clipboard.writeText()` promise that neither resolves nor rejects — rare browser focus-loss hang — leaves no confirm/fail feedback; would need a watchdog; low priority), 1 dismissed (main.ts-clipboard not unit-tested — accepted per the 1.3–1.5 manual-GUI convention). After patches: **95 tests** (38 parse + 33 state + 19 render + 5 format).
+- **Post-review patches (bmad-code-review, 3 layers — Blind Hunter, Edge Case Hunter, Acceptance Auditor):** 20 raw → 8 unique. 6 patched now (grid auto-flow wrap defect — CAUGHT because a 2-col grid with 3 auto-placed children wraps the third to row 2; `grid-template-areas` fixes it; hover rule masking `data-copy` states — cursor hover beat the `[data-copy='failed']` fill via specificity; unguarded `data-format` in the click handler writing literal "undefined"; 2 new tests; microcopy canon now lists "Copy"), 1 deferred (`E_CLIP_1`: a `clipboard.writeText()` promise that neither resolves nor rejects — rare browser focus-loss hang — leaves no confirm/fail feedback; would need a watchdog; low priority), 1 dismissed (main.ts-clipboard not unit-tested — accepted per the 1.3–1.5 manual-GUI convention). After patches: **95 tests** (38 parse + 34 state + 18 render + 5 format).
 - Guardrails: `grep` over `src/` → no `chrome.`, `fetch(`, `matchMedia` (`navigator.clipboard` is the sanctioned API); `src/lib/**` imports only types; `git diff` on `parse.ts`/`parse.test.ts`/`format.ts`/`format.test.ts` → empty (frozen modules untouched); only version change is `manifest.json` (not `package.json`).
 
 ### Completion Notes List
@@ -276,16 +276,17 @@ opencode / mimo-v2.6-flash-free
 
 - 2026-10-10: Implemented per-row one-click copy with honest confirmation and failure states: tri-state `CopyFlag`/`CopyState` in state (+stale-guard, input-clears, per-format timers via `COPY_CONFIRM_MS`), delegated clipboard click handler in `main.ts`, render-driven button labels/`disabled`/`data-copy`, copy-button CSS (found fill on success, invalid outline on failure, muted disabled) with explicit-grid row layout (`grid-template-areas`), three buttons in markup + drift guard, manifest 0.3.0 → 0.4.0. Status set to review.
 - 2026-10-10: Post-review patches (bmad-code-review, commit range baseline..HEAD): `.format-row` grid given explicit `grid-template-areas` (auto-flow had wrapped the button to row 2); hover rule scoped with `:not([data-copy])` so cursor hover no longer masks the `failed`/`copied` state; `main.ts` click handler hardened with `Object.hasOwn(state.copy, which)` (unknown `data-format` can no longer write the literal string "undefined"); +2 tests (copy-timeout on an already-idle format is a no-op; re-rendering an unchanged copied state stays "Copied"); "Copy" added to the microcopy canon in `project-context.md`. Final: typecheck 0, 95 tests, build OK, manifest 0.4.0.
-
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-6-copy-any-format-in-one-click-with-confirmation-and-failure-states.md` (modified) — this story record.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — 1-6 status transitions.
+- `project-context.md` (modified) — microcopy canon now lists "Copy" / "Copied" (review patch).
 - `src/lib/types.ts` (modified) — `FormatKey`, `CopyFlag`, `CopyState`; `PopupState.copy`.
 - `src/ui/state.ts` (modified) — `COPY_CONFIRM_MS`, `IDLE_COPY`, `copy-resolved`/`copy-timeout` events + branches.
-- `src/ui/state.test.ts` (modified) — 33 tests (mechanical literals + 7 copy-event cases).
+- `src/ui/state.test.ts` (modified) — 34 tests (mechanical literals + 7 copy-event cases + idle-timeout no-op).
 - `src/ui/render.ts` (modified) — copy-button drive loop (label/`disabled`/`data-copy`).
-- `src/ui/render.test.ts` (modified) — fixture buttons + 5 tests (17 total) + drift guard extended.
-- `src/main.ts` (modified) — delegated click handler, clipboard write, per-format timers.
+- `src/ui/render.test.ts` (modified) — fixture buttons + 6 tests (18 total) + drift guard extended.
+- `src/main.ts` (modified) — delegated click handler, clipboard write, per-format timers, `Object.hasOwn` guard.
 - `index.html` (modified) — three `button.copy-button[data-format]` children.
-- `src/styles/app.css` (modified) — copy-button styles + state rules; `.format-row` flex→grid.
+- `src/styles/app.css` (modified) — copy-button styles + state rules; `.format-row` grid with explicit `grid-template-areas`.
 - `manifest.json` (modified) — version `0.4.0`.
