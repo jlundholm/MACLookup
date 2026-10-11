@@ -197,7 +197,7 @@ body {
 }
 
 /* Hover takes the ACTIVE status colour (DESIGN: hover-foreground-found / -miss).
-   Buttons are disabled on 'invalid'/'empty', so only the two outcome states can
+   Buttons are disabled on 'invalid' only, so only the two outcome states can
    hover. Excluded when a data-copy state is showing (copied/failed) so the state
    rules are not masked by the cursor, and excluded while keyboard-focused (Story
    1.7) so the neutral focus ring is never overridden by the status colour. */
@@ -269,12 +269,19 @@ body {
 
 .result-banner:not([data-state]) {
   position: absolute;
+  padding: 0;
+  border-width: 0;
 }
 
 .result-body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  grid-column: 2;
+}
+
+.result-banner .prefix {
+  grid-column: 3;
 }
 
 .result-value {
@@ -308,6 +315,7 @@ body {
   background: currentColor;
   box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);
   flex: none;
+  grid-column: 1;
 }
 
 /* Format row (Story 1.5) — field bg, 1px border, rounded.md, 4px left status rail,
@@ -359,8 +367,9 @@ body {
   color: var(--color-text-muted);
 }
 
-/* Readout is muted by default (dash/empty), text-colored only on a valid parse —
-   render always writes a text node, so :empty can never match. */
+/* Readout is muted by default (dash/empty), text-colored only once a MAC has
+   parsed (found or miss) — render always writes a text node, so :empty can never
+   match. */
 .format-row .readout {
   color: var(--color-text-muted);
 }

@@ -45,6 +45,11 @@
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.
 
+## Deferred from: code review of story 2-3 (2026-10-11)
+
+- **Outcome styling commits to `miss` during the dataset load window:** a valid MAC pasted before `dataset-ready` derives `status: 'miss'` (Critical Decision 1), so `root.dataset.status` (src/ui/render.ts:50) paints the format-row rails and copy-button hover in the amber miss colour before the dataset has answered — only the banner is readiness-gated. Transient (≈ one-time load, measured 172.8 ms in 2.2) and inherited from 2.2's `'valid'`-keyed rails; no failing test. Revisit if the load ever becomes slow enough to be perceptible, or if a fourth "checking" status is ever wanted.
+- **Live-region text written unconditionally each render:** `render()` (src/ui/render.ts:86-88) reassigns `#banner-label`/`#banner-value`/`#banner-prefix` `textContent` on every `input` event even when the outcome string is unchanged, which some assistive tech may re-announce while typing into the invalid state. The same unconditional-write pattern pre-dates this story (1.7's `#input-error`); suppressing identical writes is a cross-cutting a11y refinement (diff-before-write), not a 2.3 defect.
+
 ## Deferred from: code review of story 2-2 (2026-10-11)
 
 - **Empty-string vendor semantics:** `lookupVendor` (src/lib/lookup.ts:26) returns `{ ok: true, vendor: '' }` for an OUI whose `Organization Name` is blank, which is indistinguishable from a real hit; Story 2.3's "Unknown vendor" microcopy must define how a blank name renders. No blank values exist in the committed artifact, so this is a hand-off rather than a defect.

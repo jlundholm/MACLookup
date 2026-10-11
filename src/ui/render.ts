@@ -74,19 +74,19 @@ export function render(root: HTMLElement, state: PopupState): void {
   }
 
   const banner = root.querySelector<HTMLElement>('#result-banner');
-  const lamp = root.querySelector<HTMLElement>('#banner-lamp');
-  const label = root.querySelector<HTMLElement>('#banner-label');
-  const value = root.querySelector<HTMLElement>('#banner-value');
-  const prefix = root.querySelector<HTMLElement>('#banner-prefix');
   const outcome = bannerOutcome(state);
-  if (banner && lamp && label && value && prefix) {
+  if (banner) {
     if (outcome) banner.dataset.state = outcome.state;
     else banner.removeAttribute('data-state');
-    lamp.hidden = !outcome?.lamp;
-    label.textContent = outcome?.label ?? '';
-    value.textContent = outcome?.value ?? '';
-    prefix.textContent = outcome?.prefix ?? '';
   }
+  const lamp = root.querySelector<HTMLElement>('#banner-lamp');
+  if (lamp) lamp.hidden = !outcome?.lamp;
+  const label = root.querySelector<HTMLElement>('#banner-label');
+  if (label) label.textContent = outcome?.label ?? '';
+  const value = root.querySelector<HTMLElement>('#banner-value');
+  if (value) value.textContent = outcome?.value ?? '';
+  const prefix = root.querySelector<HTMLElement>('#banner-prefix');
+  if (prefix) prefix.textContent = outcome?.prefix ?? '';
 
   root.dataset.status = state.status;
 }

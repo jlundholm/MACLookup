@@ -469,6 +469,22 @@ describe('render', () => {
       expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
       expect(el<HTMLElement>(root, '#result-banner').hasAttribute('data-state')).toBe(false);
     });
+
+    it('writes the semantic nodes even when a decorative node is missing', () => {
+      document.body.innerHTML = `
+        <main class="popup" id="popup">
+          <div class="result-banner" id="result-banner" role="status" aria-live="polite">
+            <span class="state-label" id="banner-label"></span>
+            <span class="result-value" id="banner-value"></span>
+          </div>
+        </main>
+      `;
+      const rootEl = document.getElementById('popup') as HTMLElement;
+      render(rootEl, FOUND);
+      expect(document.getElementById('banner-label')?.textContent).toBe('Found');
+      expect(document.getElementById('banner-value')?.textContent).toBe('Apple, Inc.');
+      expect(document.getElementById('result-banner')?.getAttribute('data-state')).toBe('found');
+    });
   });
 
   describe('database unavailable', () => {

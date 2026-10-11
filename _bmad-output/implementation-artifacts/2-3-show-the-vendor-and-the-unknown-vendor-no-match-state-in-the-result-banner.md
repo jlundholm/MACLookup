@@ -4,7 +4,7 @@ baseline_commit: e67427e292c7c2b837b821c833a214c1d7a81c91
 
 # Story 2.3: Show the Vendor and the "Unknown vendor" no-match state in the result banner
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -101,6 +101,20 @@ So that I can tell "vendor found," "looked up, no match," and "invalid" apart at
   - [x] Run `npm run typecheck` (0 errors), `npm test` (no regressions), `npm run build`.
   - [x] Bump `manifest.json` `version` from `0.8.0` to `0.9.0` (project-context: manifest-only version bumps; `package.json` stays `0.0.1`).
   - [x] Confirm the privacy guard still passes untouched — this story adds no network code, and the 2.2 inline `fetch` must stay byte-identical.
+
+### Review Findings
+
+_Three parallel adversarial layers (Blind Hunter / Edge Case Hunter / Acceptance Auditor), 2026-10-11, diff `e67427e..85640da`. 0 decision-needed (1 resolved), 6 patch, 2 defer, 13 dismissed. Auditor found **0 acceptance-criteria violations**; the `:not([data-state])` substitution for the story's `:empty` was confirmed a legitimate, documented deviation._
+
+- [x] [Review][Dismissed] Banner value typography vs DESIGN readout role — resolved 2026-10-11: keep body size as Story Task 3 prescribes; the DESIGN.md:202 readout role (13.5px/700 tabular) is **not** adopted for the hero vendor name. [src/styles/app.css:280-282]
+- [x] [Review][Patch] Banner writes are all-or-nothing behind decorative nodes [src/ui/render.ts:82-90] — `if (banner && lamp && label && value && prefix)` gates `data-state`, `#banner-label`, and `#banner-value` on the *aria-hidden* lamp/prefix existing. Markup drift (renaming a decorative node) would silently strand stale live-region text while `root.dataset.status` still commits. Update each node independently (or fail loud via a `required()`-style helper), matching how the row/button writes are already independent.
+- [x] [Review][Patch] Idle banner is not zero-size, so its absolute box can swallow pointers [src/styles/app.css:258-272] — at rest the banner is `position: absolute` but keeps `padding: var(--space-3)` + `1.5px` border, so an invisible ~30px box sits at its static position (between input and rows) and can intercept pointer/selection during the load window — unlike the deleted `.input-error:empty`, which had no padding. Zero the idle box: `.result-banner:not([data-state]) { padding: 0; border-width: 0; }` (or `pointer-events: none`).
+- [x] [Review][Patch] Hiding the lamp shifts the banner grid columns [src/styles/app.css:258-268] — `grid-template-columns: auto 1fr auto` with auto-placement; when the lamp is `display:none` (any state without a lamp, incl. `unavailable`) the body falls into the `auto` column and the empty prefix into `1fr`, so the value no longer sits in the flexible column. Pin the slots explicitly (`grid-column: 1|2|3` on lamp/body/prefix).
+- [x] [Review][Patch] Lamp can flash before the first render [index.html:26] — `#banner-lamp` ships without `hidden`; only `render` sets `lamp.hidden`. Between HTML paint and the deferred module executing, a 13px `currentColor` dot is visible at the popup's top-left. Add `hidden` to `#banner-lamp` in `index.html`.
+- [x] [Review][Patch] Stale comment claims buttons are disabled on `empty` [src/styles/app.css:199-203] — the comment says "Buttons are disabled on 'invalid'/'empty'", but `btn.disabled = state.status === 'invalid'` (empty → enabled). Harmless today (rows are hidden on empty) but the comment contradicts the code it explains. Reword to "disabled on 'invalid' only".
+- [x] [Review][Patch] Dev Agent Record drift [story:301,321,324] — the File List says sprint-status is `in-progress` (it is `review`); the Change Log's "8 files changed (+499/−130)" omits the two tracking docs (10 non-story files, +516/−140); and the "grep-clean `'valid'`" claim is overstated — a comment token remains at `src/styles/app.css:315` (and a stale "on a valid parse" at :362).
+- [x] [Review][Defer] Outcome styling commits to `miss` during the load window [src/ui/state.ts:37-43, src/ui/render.ts:50] — a valid MAC pasted before `dataset-ready` is `status: 'miss'`, so `root.dataset.status` paints the format-row rails/copy-hover amber before the dataset has answered; only the *banner* is ready-gated. Transient (~load time) and inherited from the 2.2 `'valid'`-keyed rails. No failing test. — deferred, pre-existing
+- [x] [Review][Defer] Live-region text is written unconditionally each render [src/ui/render.ts:86-88] — `textContent` is reassigned on every `input` event even when the outcome string is unchanged, which some AT may re-announce while typing invalid input. The same unconditional-write pattern pre-dates this story (1.7 `#input-error`); suppressing identical writes is a cross-cutting a11y refinement, not a 2.3 defect. — deferred, pre-existing
 
 ## Dev Notes
 
@@ -267,7 +281,8 @@ opencode / mimo-v2.6-flash-free (dev-story execution, red-green-refactor per tas
 ### Completion Notes List
 
 - `MacStatus` is now the architecture's four-value union `'empty' | 'found' | 'miss' |
-  'invalid'`; `'valid'` is gone from the codebase (grep-clean in `src/`, including CSS).
+  'invalid'`; no `'valid'` survives as a `MacStatus` value or a `[data-status='valid']`
+  selector in `src/` (only prose in CSS comments references the superseded literal).
 - The status stays a **single** field in `PopupState` — no parallel `outcome`/`result`
   field was added (Task 1's last subtask), asserted by the "does not store the outcome in a
   second field" test.
@@ -316,13 +331,19 @@ opencode / mimo-v2.6-flash-free (dev-story execution, red-green-refactor per tas
   `[data-status='valid']` rules re-pointed; `.input-error` rules deleted.
 - `manifest.json` — version `0.8.0` → `0.9.0`.
 - `_bmad-output/implementation-artifacts/deferred-work.md` — banner entry discharged.
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` — 2-3 `in-progress`.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — 2-3 `review`.
 
 ### Change Log
 
 - 2026-10-11: Story created from epics.md Story 2.3, architecture.md, DESIGN.md, and the 2-2 hand-off. Baseline for development is `e67427e` ("story 2-2 review"), a clean tree.
-- 2026-10-11: Implemented Story 2.3 against baseline `e67427e`. 8 files changed
-  (+499/−130) plus the story file; 26 tests added (202 → 228); typecheck 0; build OK;
-  `dist/oui-data.json` byte-identical; manifest `0.9.0`. One deviation from the story
-  text: the idle-banner neutralisation is `:not([data-state])` instead of `:empty`
-  (see Debug Log, Landmine 2).
+- 2026-10-11: Implemented Story 2.3 against baseline `e67427e`. 8 source files changed
+  (+499/−130), plus the story file and 2 tracking docs (`deferred-work.md`,
+  `sprint-status.yaml`) — 10 non-story files, +516/−140 total; 26 tests added
+  (202 → 228); typecheck 0; build OK; `dist/oui-data.json` byte-identical; manifest
+  `0.9.0`. One deviation from the story text: the idle-banner neutralisation is
+  `:not([data-state])` instead of `:empty` (see Debug Log, Landmine 2).
+- 2026-10-11: Code review (3 adversarial layers, diff `e67427e..85640da`). 0 AC
+  violations. Resolved 1 decision-needed (banner value typography → keep body size).
+  Applied 6 patches: decoupled banner node writes; zeroed the idle banner box; pinned
+  the banner grid columns; `hidden` on the pre-render lamp; corrected two stale CSS
+  comments; corrected this Dev Agent Record. 2 defers logged. 13 findings dismissed.
