@@ -1,5 +1,21 @@
 # Deferred Work
 
+> **Resolved by Story 1.8 (privacy guard suite, 2026-10-11):** the Story 1.1
+> "automated guard for the zero-permission / no-background / offline posture"
+> entry is discharged — `tests/privacy.guard.test.ts` now asserts the manifest
+> (permissions/host_permissions absent-or-empty; background/content_scripts
+> absent) and scans `src/**/*.ts` (forbidden network APIs, remote URL literals,
+> fetch only against `getURL`/`chrome-extension:`) on every `npm test`. The
+> Story 1.3 `tsconfig.json` `include`-lacks-`tests/` entry is also resolved
+> (config already covered `tests/`; this was a stale claim). The Story 1.1
+> **CSP** entry is **re-deferred to the store-publish epic (3.x)** with
+> research: MV3's default CSP (`script-src 'self'; object-src 'self'`) does not
+> restrict `connect-src` and cannot be relaxed below the script floor; adding a
+> `connect-src` restriction breaks CRXJS dev-mode HMR (needs dev-server
+> connect), and no in-project build-time transform exists to apply CSP only on
+> `vite build`. The guard suite already covers the enforceable runtime posture;
+> revisit CSP only if publishing, and only with a build-only transform.
+
 > **Resolved by Story 1.7 (accessibility floor):** the Story 1.1 live-region
 > `hidden`-suppression entry and the Story 1.3 `outline: none` forced-colors
 > entry are discharged. `#input-error` is a permanently-present polite live
@@ -30,8 +46,8 @@
 
 - ~~`hidden` on the `aria-live="polite"` banner (`index.html:23-29`) can suppress screen-reader announcements while hidden.~~ **Resolved/Re-scoped by Story 1.7:** `#input-error` is now the Epic-1 live region (`role="status"`); the banner's live-region pattern is re-scoped to Story 2.3 (see header).
 - Long readout/vendor text has no wrap/ellipsis constraint at the fixed 360px width under `overflow: hidden` (`src/styles/app.css:5`). Revisit in Story 1.5 (format rows) and Epic 2 (vendor name).
-- Enforce the offline/no-network posture with a restrictive MV3 CSP (`manifest.json`). Deferred to Story 1.8 (privacy guard suite) — single owner there, keeps 1.1 a pure scaffold. Note: MV3's default CSP does not restrict `connect-src`, and CRXJS dev mode requires a dev-server connect, so any CSP must keep `npm run dev` working.
-- No automated guard asserting the zero-permission / no-background / offline posture stays intact (`manifest.json`). Explicitly the scope of Story 1.8 (privacy guard test suite).
+- ~~Enforce the offline/no-network posture with a restrictive MV3 CSP (`manifest.json`).~~ **Re-deferred by Story 1.8 to the store-publish epic (3.x):** MV3 default CSP does not restrict `connect-src`; adding it breaks CRXJS dev HMR; no in-project build-only transform exists. Guard suite covers the enforceable posture (see header).
+- ~~No automated guard asserting the zero-permission / no-background / offline posture stays intact (`manifest.json`).~~ **Resolved by Story 1.8:** `tests/privacy.guard.test.ts` (manifest assertions + `src/` source scan) runs under every `npm test`.
 - `tsconfig.json` `lib` omits `DOM.Iterable` (`tsconfig.json:4`) — latent typecheck failure if future code iterates DOM collections. Low priority.
 - No Node `engines` field / `.nvmrc` pin for the Vite 8 toolchain (`package.json`). Low-risk DX hardening.
 - Dev server port is not pinned for the CRXJS dev origin (`vite.config.ts:5-7`) — if Vite falls back off port 5173, the CRXJS dev manifest origin mismatches and popup scripts fail to load. Dev-only edge case.
@@ -47,4 +63,4 @@
 
 - ~~`outline: none` on `.mac-input` (`src/styles/app.css:138`) leaves keyboard focus invisible under Windows `forced-colors`: author outlines are suppressed and both the `box-shadow` halo and the `border-color` focus cue are forced to system colors. Story 1.3's scope boundary explicitly defers `forced-colors` to Story 1.7 (accessibility floor), which should add the `@media (forced-colors: active)` focus path.~~ **Resolved by Story 1.7:** `@media (forced-colors: active)` outline path added for `.mac-input:focus-visible` and `.copy-button:focus-visible`.
 - Vitest's global `environment: 'node'` (`vitest.config.ts:5`) will break the architecture's future `src/ui/render.test.ts` (DOM assertions / happy-dom) under the `src/**/*.test.ts` include. The future DOM-test story should add a per-file `// @vitest-environment happy-dom` pragma (or `environmentMatchGlobs`) rather than change the node default.
-- `tsconfig.json` `include` (`["src", "vite.config.ts"]`) does not cover a root `tests/` directory, so Story 1.8's `tests/privacy.guard.test.ts` would be skipped by `npm run typecheck` as well as by Vitest. Note: the Vitest `include` side of this is a **patch** (fixed in this review); the `tsconfig` side rides along with it.
+- ~~`tsconfig.json` `include` (`["src", "vite.config.ts"]`) does not cover a root `tests/` directory, so Story 1.8's `tests/privacy.guard.test.ts` would be skipped by `npm run typecheck` as well as by Vitest. Note: the Vitest `include` side of this is a **patch** (fixed in this review); the `tsconfig` side rides along with it.~~ **Resolved (stale, confirmed by Story 1.8):** `tsconfig.json` `include` already contained `"tests"` and `vitest.config.ts` already included `tests/**/*.test.ts` before 1.8 started; the guard file typechecks and runs with no config changes.

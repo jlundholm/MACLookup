@@ -58,7 +58,7 @@ development_status:
   1-5-display-the-three-working-formats: done
   1-6-copy-any-format-in-one-click-with-confirmation-and-failure-states: done
   1-7-make-the-popup-keyboard-and-screen-reader-accessible: done
-  1-8-enforce-the-privacy-posture-with-a-guard-test-suite: ready-for-dev
+  1-8-enforce-the-privacy-posture-with-a-guard-test-suite: review
   epic-1-retrospective: optional
 
   # Epic 2: Name the device behind the MAC

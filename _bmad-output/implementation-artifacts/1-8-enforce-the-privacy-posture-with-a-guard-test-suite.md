@@ -4,7 +4,7 @@ baseline_commit: d046177abe19f3aa165a009c7de1bdf1975b8637
 
 # Story 1.8: Enforce the privacy posture with a guard test suite
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,31 +22,33 @@ So that privacy-by-construction cannot silently regress.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Manifest privacy assertions (AC: 1)
-  - [ ] Create `tests/` (does not exist yet) and `tests/privacy.guard.test.ts`.
-  - [ ] Read the **source** `manifest.json` at the repo root via `readFileSync(resolve(process.cwd(), 'manifest.json'))` + `JSON.parse` (the established convention from `render.test.ts`; **not** `new URL` — Node env). Rationale: Vite copies `manifest.json` verbatim into `dist/` (verified IDENTICAL in 1-7), `dist/` is gitignored, and `npm test` must not depend on a prior `npm run build` — the source manifest *is* the shipped manifest.
-  - [ ] Assert `permissions` is **absent or `[]`** and `host_permissions` is **absent or `[]`** (AC1 / NFR2). Use "absent or empty" — MV3 treats both the same, and forbidding the key outright would force a rewrite if a future key order changes; the privacy invariant is "grants nothing", not "mentions nothing".
-  - [ ] Also assert `background` and `content_scripts` are **absent** (locks Story 1.1's manifest contract and architecture's "single surface, no service worker, no content script" boundary — cheap, and the zero-permission posture is meaningless if a background worker can later fetch).
-  - [ ] Keep assertions to the four keys above plus a `manifest_version === 3` sanity check — do **not** snapshot the whole manifest (icons/name/description have no privacy bearing and would make every cosmetic edit a guard failure).
-- [ ] Task 2: `src/` source scan (AC: 2)
-  - [ ] Recursively collect `**/*.ts` under `src/` only (Node `readdirSync` with `withFileTypes`, skip `node_modules`; **exclude** any `*.test.ts` — test files may legitimately mention forbidden strings as fixtures/assertions; **exclude** `scripts/` — the build-time IEEE downloader is Story 2.1's network surface and is out of the runtime privacy perimeter).
-  - [ ] For each file, strip comments **before** scanning, with a small string-aware state machine (line `//` + block `/* */`, tracking `'`, `"`, and backtick string state so a `//` inside a string URL is not treated as a comment). Naive regex comment-stripping would corrupt exactly the string literals this guard cares about.
-  - [ ] Forbidden-API check: fail if the stripped source matches `/\b(XMLHttpRequest|WebSocket|EventSource)\b/` (AC2's explicit list). Do not add `navigator.sendBeacon`/`RTCPeerConnection` etc. — the AC names three; growing the list ad hoc invites bikeshedding, and a future `fetch` abuse is already covered by the fetch rule.
-  - [ ] Remote-URL check: fail if any **quoted string literal** in the stripped source contains `http://` or `https://` (AC2 "any remote URL literal"). Scan string literals specifically (the same state machine can yield them), not raw source — otherwise a comment mentioning `https://`… wait, comments are already stripped; still, scanning string literals keeps the rule precise and matches "literal".
-  - [ ] Fetch-target check (AC2): locate every `fetch(` call in the stripped source; extract its argument text with simple paren matching (depth counter — nested parens like `fetch(chrome.runtime.getURL('oui-data.json'))` are the expected shape); fail unless the argument text contains `getURL` or `chrome-extension:`. This permits the Story 2.2 pattern (`fetch(chrome.runtime.getURL('oui-data.json'))` → `chrome-extension://<id>/oui-data.json`) and rejects `fetch('https://…')` / `fetch(remoteVar)` where the argument mentions neither. Document the heuristic's limit: it is argument-text-based, not a full AST — a future caller that hides a remote URL behind a variable named `getURL` would slip through; that is an acceptable false-negative for a 3-rule guard (a determined bypasser edits the guard).
-  - [ ] Failure messages must name the file and the matched text (a bare "network API found" in a 5-file codebase is useless when this fires in year two).
-- [ ] Task 3: Wire into `npm test` (AC: 3)
-  - [ ] **No config changes needed — verify only.** `vitest.config.ts` already includes `tests/**/*.test.ts`; `tsconfig.json` `include` already has `"tests"` (both fixed in 1-3/1-7 reviews — the old deferred-work entry claiming `tests/` would be skipped by typecheck is **stale**; Task 5 marks it resolved). Default Vitest environment is `node`, which is what this file wants (no `// @vitest-environment happy-dom` pragma).
-  - [ ] Run `npm test` and confirm the output shows the new `tests/privacy.guard.test.ts` file and its assertions passing alongside the existing 4 files / 97 tests.
-- [ ] Task 4: CSP evaluation — document the decision, do not ship a dev-breaking CSP (AC: 1–3; owned defer from 1-1)
-  - [ ] The 1-1 review deferred "enforce the offline/no-network posture with a restrictive MV3 CSP" to this story as single owner. Research conclusion (see Dev Notes decision 3): **do not add `content_security_policy` to the manifest in this story.** MV3's default extension-page CSP (`script-src 'self'; object-src 'self'`) already forbids inline/remote scripts and cannot be relaxed below the floor; it does **not** restrict `connect-src`, and adding `connect-src 'self'` (or similar) to cover the already-redundant network gap **breaks CRXJS dev mode**, which needs a dev-server connect for HMR (`vite.config.ts` uses `crx({ manifest })`; no build-time transform exists in-project to apply CSP only on `vite build`).
-  - [ ] The enforceable runtime posture (no permissions, no background/content scripts, no network APIs, no remote literals, fetch-local-only) is fully covered by Tasks 1–2 — the CSP would be defense-in-depth against a vector (`connect-src`) that the source scan and manifest guard already make unreachable without a manifest edit that the guard would catch.
-  - [ ] Update `_bmad-output/implementation-artifacts/deferred-work.md`: mark the Story 1.8 **guard-suite** defer resolved (this story); rewrite the **CSP** defer with the research finding and re-scope it to Story 3.x (store publish — the only context where a build-only CSP transform, if ever wanted, would be worth the tooling); mark the stale `tsconfig.json` `include`-lacks-`tests/` entry resolved (already fixed in-tree).
-- [ ] Task 5: Version bump + gates (AC: 1–3)
-  - [ ] `manifest.json` `version`: `0.5.0` → `0.6.0` (minor bump per story; `package.json` untouched per project-context).
-  - [ ] Gates: `npm run typecheck` (0 errors), `npm test` (all green, guard file included), `npm run build` (succeeds; `dist/manifest.json` version `0.6.0`).
-  - [ ] Guardrail greps (self-application): the new test file is the *only* place forbidden strings/API names may appear; `src/` greps for `chrome.`, `fetch(`, `XMLHttpRequest` stay clean today (Story 2.2 will introduce the first permitted `fetch`+`getURL` — the guard is pre-built for it).
-  - [ ] Sanity: temporarily break a copy of the guard inputs (e.g. assert against a fixture manifest with `"permissions": ["tabs"]`, or a fixture source with `fetch('https://example.com')`) and confirm each rule fails loudly — then revert. A guard that has never been observed red is a guard of unknown quality (mirrors the 1-7 review's "vacuous test" finding).
+- [x] Task 1: Manifest privacy assertions (AC: 1)
+  - [x] Create `tests/` (does not exist yet) and `tests/privacy.guard.test.ts`.
+  - [x] Read the **source** `manifest.json` at the repo root via `readFileSync(resolve(process.cwd(), 'manifest.json'))` + `JSON.parse` (the established convention from `render.test.ts`; **not** `new URL` — Node env). Rationale: Vite copies `manifest.json` verbatim into `dist/` (verified IDENTICAL in 1-7), `dist/` is gitignored, and `npm test` must not depend on a prior `npm run build` — the source manifest *is* the shipped manifest.
+  - [x] Assert `permissions` is **absent or `[]`** and `host_permissions` is **absent or `[]`** (AC1 / NFR2). Use "absent or empty" — MV3 treats both the same, and forbidding the key outright would force a rewrite if a future key order changes; the privacy invariant is "grants nothing", not "mentions nothing".
+  - [x] Also assert `background` and `content_scripts` are **absent** (locks Story 1.1's manifest contract and architecture's "single surface, no service worker, no content script" boundary — cheap, and the zero-permission posture is meaningless if a background worker can later fetch).
+  - [x] Keep assertions to the four keys above plus a `manifest_version === 3` sanity check — do **not** snapshot the whole manifest (icons/name/description have no privacy bearing and would make every cosmetic edit a guard failure).
+- [x] Task 2: `src/` source scan (AC: 2)
+  - [x] Recursively collect `**/*.ts` under `src/` only (Node `readdirSync` with `withFileTypes`, skip `node_modules`; **exclude** any `*.test.ts` — test files may legitimately mention forbidden strings as fixtures/assertions; **exclude** `scripts/` — the build-time IEEE downloader is Story 2.1's network surface and is out of the runtime privacy perimeter).
+  - [x] For each file, strip comments **before** scanning, with a small string-aware state machine (line `//` + block `/* */`, tracking `'`, `"`, and backtick string state so a `//` inside a string URL is not treated as a comment). Naive regex comment-stripping would corrupt exactly the string literals this guard cares about.
+  - [x] Forbidden-API check: fail if the stripped source matches `/\b(XMLHttpRequest|WebSocket|EventSource)\b/` (AC2's explicit list). Do not add `navigator.sendBeacon`/`RTCPeerConnection` etc. — the AC names three; growing the list ad hoc invites bikeshedding, and a future `fetch` abuse is already covered by the fetch rule.
+  - [x] Remote-URL check: fail if any **quoted string literal** in the stripped source contains `http://` or `https://` (AC2 "any remote URL literal"). Scan string literals specifically (the same state machine yields them into a `strings[]` list), not raw source.
+  - [x] Fetch-target check (AC2): locate every `fetch(` call in the stripped source; extract its argument text with simple paren matching (depth counter — nested parens like `fetch(chrome.runtime.getURL('oui-data.json'))` are the expected shape); fail unless the argument text contains `getURL` or `chrome-extension:`. String literals are replaced by NUL-delimited index slots during stripping (structure-safe for paren matching) and expanded back before the substring test — so `fetch('chrome-extension://…')` passes. This permits the Story 2.2 pattern and rejects `fetch('https://…')` / bare `fetch(remoteVar)`. Documented heuristic limit (decision 6): bare-variable `fetch(url)` is flagged even if `getURL` appears elsewhere in the file — the pinned architecture shape is the inline call.
+  - [x] Failure messages name the file and the matched text (`src/bad.ts: forbidden network API "WebSocket"`, etc.).
+- [x] Task 3: Wire into `npm test` (AC: 3)
+  - [x] **No config changes needed — verified.** `vitest.config.ts` already includes `tests/**/*.test.ts`; `tsconfig.json` `include` already has `"tests"`. Default Vitest environment is `node`; no happy-dom pragma on the guard file.
+  - [x] `npm test` output shows `tests/privacy.guard.test.ts` (18 assertions) passing alongside the existing 4 files — total **5 files, 116 tests**.
+- [x] Task 4: CSP evaluation — document the decision, do not ship a dev-breaking CSP (AC: 1–3; owned defer from 1-1)
+  - [x] **No `content_security_policy` added to the manifest.** MV3 default (`script-src 'self'; object-src 'self'`) already forbids inline/remote scripts, cannot be relaxed below the floor, and does not restrict `connect-src`; adding a `connect-src` restriction breaks CRXJS dev-mode HMR (`vite.config.ts` uses `crx({ manifest })`; no in-project build-time transform).
+  - [x] The enforceable runtime posture is fully covered by Tasks 1–2.
+  - [x] `_bmad-output/implementation-artifacts/deferred-work.md` updated: Story 1.8 header block (guard resolved; CSP re-scoped to 3.x with research; stale tsconfig-`tests` entry resolved); inline annotations on the 1-1 CSP entry, 1-1 guard entry, and 1-3 tsconfig-`include` entry. The unrelated `DOM.Iterable` `lib` entry left open.
+- [x] Task 5: Version bump + gates (AC: 1–3)
+  - [x] `manifest.json` `version`: `0.5.0` → `0.6.0` (minor bump per story; `package.json` untouched).
+  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (5 files, 116 tests green), `npm run build` (succeeds; `dist/manifest.json` version `0.6.0`; source == dist manifest byte-identical).
+  - [x] Guardrail greps: no `chrome.`, `fetch(`, `XMLHttpRequest`, `WebSocket`, `EventSource`, or `http(s)://` in `src/`; `src/lib/**` and `src/ui/**` untouched this story.
+  - [x] Red-path sanity (observed failing, then reverted):
+    - Temporarily set `"permissions": ["tabs"]` in `manifest.json` → guard failed with `permissions must be absent or [] (got ["tabs"])`; reverted (byte-identical).
+    - Temporarily added `src/bad-fixture.ts` with `new WebSocket('wss://…')` and `'https://evil.example/x'` → scan failed with both violations named; deleted; suite back to 116 green.
 
 ## Dev Notes
 
@@ -117,10 +119,34 @@ So that privacy-by-construction cannot silently regress.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+opencode / mimo-v2.6-flash-free
 
 ### Debug Log References
 
+- RED phase via fixtures, not via breaking the real tree first: the 18 guard tests include negative-path fixtures for every rule (permissions/host_permissions/background/content_scripts; XMLHttpRequest/WebSocket/EventSource; http/https string literals; non-extension fetch) so each detector is proven on first write. The real-tree assertions pass because the tree is clean.
+- One implementation bug caught by the first `npm test` run: the string-aware stripper removed string *content* from `stripped`, so `fetch('chrome-extension://…')` looked like `fetch()` with empty args and false-failed. Fixed by emitting NUL-delimited index slots into `stripped` (structure-safe for paren matching) and expanding slots back via `expandStringSlots` before the getURL/chrome-extension: substring test.
+- Second false-fail on first run: `fetch(url)` where `url` was assigned from `getURL` earlier — the argument text is just `url`. Per the story's heuristic (decision 6) this is intentionally flagged; the test was corrected to assert the *pinned* inline shape `fetch(chrome.runtime.getURL('oui-data.json'))` passes, the chrome-extension literal passes, and bare-variable fetch is the documented limit.
+- Red-path sanity (Task 5): temporary `"permissions": ["tabs"]` in `manifest.json` → 1 test failed naming the key; reverted byte-identical. Temporary `src/bad-fixture.ts` with WebSocket + https URL → 1 test failed naming both violations; deleted; suite green again.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **5 files, 116 tests passed** (97 existing + 19 guard); `npm run build` → success, `dist/manifest.json` version `0.6.0`, source == dist manifest byte-identical.
+- Blast-radius: no files under `src/` modified (`git status` shows only the new test, manifest version, deferred-work, story, sprint-status). Grep for `chrome.`/`fetch(`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`https?://` in `src/` → no matches. `package.json` untouched. No new dependencies.
+
 ### Completion Notes List
 
+- **AC1 (manifest guard):** `tests/privacy.guard.test.ts` reads source `manifest.json` via `readFileSync` + `JSON.parse` and fails on non-empty/`present` `permissions`, `host_permissions`, `background`, or `content_scripts`, or non-3 `manifest_version`. Negative fixtures prove each rule. Source manifest == shipped manifest (Vite copies verbatim; verified).
+- **AC2 (source scan):** recursive `src/**/*.ts` scan (excludes `*.test.ts`); string-aware comment stripper with NUL slots; three rules — forbidden APIs (XHR/WebSocket/EventSource), remote URL string literals (http/https), fetch-only-against-getURL/chrome-extension. Failure messages include file + match. Real tree clean; every rule observed red on fixtures and on a temporary bad `src` file.
+- **AC3 (runs under `npm test`):** no config changes — `vitest.config.ts`/`tsconfig.json` already covered `tests/`. Guard file appears in `vitest run` as the 5th file.
+- **CSP (Task 4):** deliberately not added; research recorded in `deferred-work.md` (default CSP lacks connect-src restriction; connect-src breaks CRXJS dev; re-scoped to 3.x with build-transform note). Manifest still has no `content_security_policy`.
+- **Owned defers discharged:** 1-1 automated guard (resolved — this file); 1-3 stale tsconfig-`include` claim (confirmed resolved, annotated); 1-1 CSP (re-deferred to 3.x with research, not dropped).
+- **Heuristic limit (intentional, decision 6):** bare-variable `fetch(url)` is flagged even if `getURL` appears elsewhere in the same file — the architecture-pinned shape is the inline `fetch(chrome.runtime.getURL(...))`. A determined bypasser edits the guard; this is a regression tripwire, not a security boundary.
+
+### Change Log
+
+- 2026-10-11: Privacy guard suite: added `tests/privacy.guard.test.ts` (manifest assertions + string-aware `src/` source scan; 18 tests including negative-path fixtures for every rule); red-path sanity verified against a temporary permissions grant and a temporary bad `src` file; `deferred-work.md` updated (guard defer resolved, CSP re-scoped to 3.x with research, stale tsconfig-`tests` entry resolved); manifest 0.5.0 → 0.6.0. No `src/` changes, no config changes, no new dependencies. 116 tests, typecheck 0, build OK, dist `0.6.0`. Status set to review.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/1-8-enforce-the-privacy-posture-with-a-guard-test-suite.md` (modified) — this story record.
+- `_bmad-output/implementation-artifacts/deferred-work.md` (modified) — 1.8 resolution header + annotated 1-1 CSP/guard entries + resolved 1-3 tsconfig-`include` entry.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — 1-8 status transitions.
+- `tests/privacy.guard.test.ts` (new) — privacy guard suite (manifest + source scan).
+- `manifest.json` (modified) — version `0.6.0`.
