@@ -4,7 +4,7 @@ baseline_commit: d046177abe19f3aa165a009c7de1bdf1975b8637
 
 # Story 1.8: Enforce the privacy posture with a guard test suite
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,18 +37,27 @@ So that privacy-by-construction cannot silently regress.
   - [x] Failure messages name the file and the matched text (`src/bad.ts: forbidden network API "WebSocket"`, etc.).
 - [x] Task 3: Wire into `npm test` (AC: 3)
   - [x] **No config changes needed — verified.** `vitest.config.ts` already includes `tests/**/*.test.ts`; `tsconfig.json` `include` already has `"tests"`. Default Vitest environment is `node`; no happy-dom pragma on the guard file.
-  - [x] `npm test` output shows `tests/privacy.guard.test.ts` (18 assertions) passing alongside the existing 4 files — total **5 files, 116 tests**.
+  - [x] `npm test` output shows `tests/privacy.guard.test.ts` (21 assertions) passing alongside the existing 4 files — total **5 files, 118 tests**.
 - [x] Task 4: CSP evaluation — document the decision, do not ship a dev-breaking CSP (AC: 1–3; owned defer from 1-1)
   - [x] **No `content_security_policy` added to the manifest.** MV3 default (`script-src 'self'; object-src 'self'`) already forbids inline/remote scripts, cannot be relaxed below the floor, and does not restrict `connect-src`; adding a `connect-src` restriction breaks CRXJS dev-mode HMR (`vite.config.ts` uses `crx({ manifest })`; no in-project build-time transform).
   - [x] The enforceable runtime posture is fully covered by Tasks 1–2.
   - [x] `_bmad-output/implementation-artifacts/deferred-work.md` updated: Story 1.8 header block (guard resolved; CSP re-scoped to 3.x with research; stale tsconfig-`tests` entry resolved); inline annotations on the 1-1 CSP entry, 1-1 guard entry, and 1-3 tsconfig-`include` entry. The unrelated `DOM.Iterable` `lib` entry left open.
 - [x] Task 5: Version bump + gates (AC: 1–3)
   - [x] `manifest.json` `version`: `0.5.0` → `0.6.0` (minor bump per story; `package.json` untouched).
-  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (5 files, 116 tests green), `npm run build` (succeeds; `dist/manifest.json` version `0.6.0`; source == dist manifest byte-identical).
+  - [x] Gates: `npm run typecheck` (0 errors), `npm test` (5 files, 118 tests green), `npm run build` (succeeds; `dist/manifest.json` version `0.6.0`; source == dist manifest byte-identical).
   - [x] Guardrail greps: no `chrome.`, `fetch(`, `XMLHttpRequest`, `WebSocket`, `EventSource`, or `http(s)://` in `src/`; `src/lib/**` and `src/ui/**` untouched this story.
   - [x] Red-path sanity (observed failing, then reverted):
     - Temporarily set `"permissions": ["tabs"]` in `manifest.json` → guard failed with `permissions must be absent or [] (got ["tabs"])`; reverted (byte-identical).
-    - Temporarily added `src/bad-fixture.ts` with `new WebSocket('wss://…')` and `'https://evil.example/x'` → scan failed with both violations named; deleted; suite back to 116 green.
+    - Temporarily added `src/bad-fixture.ts` with `new WebSocket('wss://…')` and `'https://evil.example/x'` → scan failed with both violations named; deleted; suite back to green.
+
+### Review Findings
+
+- [x] [Review][Patch] Remote-URL literal check is case-sensitive and escape-naive — AC2 says "any remote URL literal", but `literal.includes('http://')`/`includes('https://')` miss `'HTTPS://example.com'` (case) and `'https:\/\/example.com'` (escaped slashes, which decode to the same URL at runtime). Tighten to a case-insensitive scheme test and normalize `\/` in stored literals. [tests/privacy.guard.test.ts:130-134] → **Fixed:** now `normalized = literal.replace(/\\\//g, '/')` + `/https?:\/\//i.test(normalized)`; two negative-path tests added (uppercase scheme, escaped slashes).
+- [x] [Review][Patch] `collectSourceFiles` does not skip `node_modules` — Task 2 / Critical Decision 1 explicitly say to skip `node_modules`; the recursive walk only filters `.ts`/`!*.test.ts`, so a nested vendored dir under `src/` would be scanned (or blow up the runtime). Add an explicit `node_modules` skip. [tests/privacy.guard.test.ts:159-174] → **Fixed:** directory entries named `node_modules` are skipped.
+- [x] [Review][Patch] Story record states inconsistent guard assertion counts — Task 3 said "18 assertions" and the Debug Log said "18 guard tests", but the file has **19** `it()` tests (then **21** after the two URL patches above) and the same paragraph said "97 existing + 19 guard". Reconcile. [1-8-…md:40,126] → **Fixed:** all counts reconciled to 21 guard tests / 118 total.
+- [x] [Review][Defer] Template-literal interpolation (`${…}`) contents are not scanned as code [tests/privacy.guard.test.ts:96-117] — deferred, documented decision 5; no network code in interpolation today, and fail-closed is impossible because `src/main.ts:9` legitimately uses `${id}`.
+- [x] [Review][Defer] Detection can be evaded by indirection — bracket notation (`window['XMLHttpRequest']`), TS generics (`fetch<T>(…)`), optional chaining (`fetch?.(…)`), and a substring-spoofed fetch target (`fetch('//evil.example/getURL')`) [tests/privacy.guard.test.ts:131-136,144-163] — deferred, documented heuristic limit (decision 6); the guard is a regression tripwire, not a security boundary.
+- [x] [Review][Defer] Protocol-relative URLs (`//evil.example/x`) are not flagged as remote URL literals [tests/privacy.guard.test.ts:130-134] — deferred; AC2 names only `http://`/`https://`, and the string-literal rule still catches those.
 
 ## Dev Notes
 
@@ -123,11 +132,11 @@ opencode / mimo-v2.6-flash-free
 
 ### Debug Log References
 
-- RED phase via fixtures, not via breaking the real tree first: the 18 guard tests include negative-path fixtures for every rule (permissions/host_permissions/background/content_scripts; XMLHttpRequest/WebSocket/EventSource; http/https string literals; non-extension fetch) so each detector is proven on first write. The real-tree assertions pass because the tree is clean.
+- RED phase via fixtures, not via breaking the real tree first: the 21 guard tests include negative-path fixtures for every rule (permissions/host_permissions/background/content_scripts; XMLHttpRequest/WebSocket/EventSource; http/https string literals; non-extension fetch) so each detector is proven on first write. The real-tree assertions pass because the tree is clean.
 - One implementation bug caught by the first `npm test` run: the string-aware stripper removed string *content* from `stripped`, so `fetch('chrome-extension://…')` looked like `fetch()` with empty args and false-failed. Fixed by emitting NUL-delimited index slots into `stripped` (structure-safe for paren matching) and expanding slots back via `expandStringSlots` before the getURL/chrome-extension: substring test.
 - Second false-fail on first run: `fetch(url)` where `url` was assigned from `getURL` earlier — the argument text is just `url`. Per the story's heuristic (decision 6) this is intentionally flagged; the test was corrected to assert the *pinned* inline shape `fetch(chrome.runtime.getURL('oui-data.json'))` passes, the chrome-extension literal passes, and bare-variable fetch is the documented limit.
 - Red-path sanity (Task 5): temporary `"permissions": ["tabs"]` in `manifest.json` → 1 test failed naming the key; reverted byte-identical. Temporary `src/bad-fixture.ts` with WebSocket + https URL → 1 test failed naming both violations; deleted; suite green again.
-- Final gates: `npm run typecheck` → 0 errors; `npm test` → **5 files, 116 tests passed** (97 existing + 19 guard); `npm run build` → success, `dist/manifest.json` version `0.6.0`, source == dist manifest byte-identical.
+- Final gates: `npm run typecheck` → 0 errors; `npm test` → **5 files, 118 tests passed** (97 existing + 21 guard); `npm run build` → success, `dist/manifest.json` version `0.6.0`, source == dist manifest byte-identical.
 - Blast-radius: no files under `src/` modified (`git status` shows only the new test, manifest version, deferred-work, story, sprint-status). Grep for `chrome.`/`fetch(`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`https?://` in `src/` → no matches. `package.json` untouched. No new dependencies.
 
 ### Completion Notes List
@@ -141,7 +150,9 @@ opencode / mimo-v2.6-flash-free
 
 ### Change Log
 
-- 2026-10-11: Privacy guard suite: added `tests/privacy.guard.test.ts` (manifest assertions + string-aware `src/` source scan; 18 tests including negative-path fixtures for every rule); red-path sanity verified against a temporary permissions grant and a temporary bad `src` file; `deferred-work.md` updated (guard defer resolved, CSP re-scoped to 3.x with research, stale tsconfig-`tests` entry resolved); manifest 0.5.0 → 0.6.0. No `src/` changes, no config changes, no new dependencies. 116 tests, typecheck 0, build OK, dist `0.6.0`. Status set to review.
+- 2026-10-11: Privacy guard suite: added `tests/privacy.guard.test.ts` (manifest assertions + string-aware `src/` source scan; 21 tests including negative-path fixtures for every rule); red-path sanity verified against a temporary permissions grant and a temporary bad `src` file; `deferred-work.md` updated (guard defer resolved, CSP re-scoped to 3.x with research, stale tsconfig-`tests` entry resolved); manifest 0.5.0 → 0.6.0. No `src/` changes, no config changes, no new dependencies. 118 tests, typecheck 0, build OK, dist `0.6.0`. Status set to review.
+
+- 2026-10-11: Code-review follow-up (3 patches applied): remote-URL literal check made case-insensitive and escape-tolerant (`HTTPS://`, `https:\/\/`) with two negative-path tests; `collectSourceFiles` now skips `node_modules`; story assertion counts reconciled (21 guard tests / 118 total). Deferred 3 findings to `deferred-work.md` (template-interpolation blind spot, indirection bypasses, protocol-relative URLs). 118 tests, typecheck 0, build OK, dist `0.6.0`.
 
 ### File List
 

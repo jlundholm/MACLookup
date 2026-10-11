@@ -38,6 +38,12 @@
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.
 
+## Deferred from: code review of story 1-8 (2026-10-11)
+
+- **Template-literal interpolation blind spot:** the guard's string-aware stripper treats an entire backtick literal (including any `${…}` interpolation) as one opaque string, so network APIs or remote URLs hidden inside an interpolation expression are never scanned as code. Documented as Critical Decision 5 ("extend the stripper then"); no scanned `src` file performs network work inside interpolation today, and fail-closed is impossible because `src/main.ts:9` legitimately uses `` `…#${id}` ``. Revisit only if `src` gains interpolation that could carry a network target — proper handling needs template-depth tracking, not a regex.
+- **Indirection bypasses:** the forbidden-API regex (`\b(XMLHttpRequest|WebSocket|EventSource)\b`), the fetch-call regex (`\bfetch\s*\(`), and the fetch-target substring test can be evaded by bracket notation (`window['XMLHttpRequest']`), TS generics (`fetch<T>(…)`), optional chaining (`fetch?.(…)`), or a target whose text merely contains `getURL`/`chrome-extension:` (`fetch('//evil.example/getURL')`). Documented as Critical Decision 6: the guard is a regression tripwire, not a security boundary; a determined bypasser edits the guard. Revisit only if the guard's threat model changes.
+- **Protocol-relative URL literals:** `"//evil.example/x"` is not flagged by the remote-URL literal rule (AC2 names only `http://`/`https://`). Same tripwire caveat as above; the explicit http(s) case is still caught.
+
 ## Deferred from: code review of story 1-7 (2026-10-11)
 
 - MV3 popup `autofocus` is platform-dependent and has no fallback: Chromium popup-document focus quirks can leave both `autofocus` and programmatic `focus()` as no-ops until the popup window gains focus, so AC1 ("popup opens with focus in the field") has no recovery path on affected Chrome builds. Story 1-7 deliberately ships declarative-only (no JS `focus()` call in `main.ts`); the manual GUI verification step in Task 6 is the current coverage. Revisit only if a real user reports the field doesn't start focused; a JS fallback would need care not to steal focus from the address bar on open.

@@ -136,7 +136,8 @@ function scanSourceFile(fileName: string, source: string): string[] {
   }
 
   for (const literal of strings) {
-    if (literal.includes('http://') || literal.includes('https://')) {
+    const normalized = literal.replace(/\\\//g, '/');
+    if (/https?:\/\//i.test(normalized)) {
       violations.push(`${fileName}: remote URL literal ${JSON.stringify(literal)}`);
     }
   }
@@ -170,6 +171,7 @@ function collectSourceFiles(dir: string): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (entry.name === 'node_modules') continue;
       files.push(...collectSourceFiles(full));
     } else if (
       entry.isFile() &&
@@ -256,6 +258,16 @@ describe('privacy guard: src scan', () => {
 
   it('flags an http URL string literal', () => {
     const v = scanSourceFile('bad.ts', 'const u = "http://example.com/oui";');
+    expect(v.some((x) => x.includes('remote URL literal'))).toBe(true);
+  });
+
+  it('flags an uppercase-scheme URL literal', () => {
+    const v = scanSourceFile('bad.ts', "const u = 'HTTPS://example.com/oui';");
+    expect(v.some((x) => x.includes('remote URL literal'))).toBe(true);
+  });
+
+  it('flags an escaped-slash URL literal', () => {
+    const v = scanSourceFile('bad.ts', "const u = 'https:\\/\\/example.com/oui';");
     expect(v.some((x) => x.includes('remote URL literal'))).toBe(true);
   });
 
