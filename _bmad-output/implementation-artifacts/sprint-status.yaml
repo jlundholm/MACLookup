@@ -42,7 +42,7 @@
 
 generated: 2026-10-10
 last_updated: 2026-10-11
-# history: 1-2 done 2026-10-10; 1-3 done 2026-10-10; 1-4 done 2026-10-10 (2 review patches applied); 1-5 done 2026-10-10 (5 review patches applied; 1 deferred to 2.3); 1-6 done 2026-10-10 (6 review patches applied; 1 deferred); 1-7 done 2026-10-11 (4 review patches applied; 1 deferred); 1-8 done 2026-10-11 (3 review patches applied; 3 deferred); 2-1 created 2026-10-11 (story file written; epic-2 -> in-progress)
+# history: 1-2 done 2026-10-10; 1-3 done 2026-10-10; 1-4 done 2026-10-10 (2 review patches applied); 1-5 done 2026-10-10 (5 review patches applied; 1 deferred to 2.3); 1-6 done 2026-10-10 (6 review patches applied; 1 deferred); 1-7 done 2026-10-11 (4 review patches applied; 1 deferred); 1-8 done 2026-10-11 (3 review patches applied; 3 deferred); 2-1 done 2026-10-11 (8 review patches applied; 5 deferred)
 project: Mac Lookup
 project_key: NOKEY
 tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
 
   # Epic 2: Name the device behind the MAC
   epic-2: in-progress
-  2-1-generate-the-bundled-oui-database-at-build-time: review
+  2-1-generate-the-bundled-oui-database-at-build-time: done
   2-2-load-the-dataset-and-resolve-the-vendor-with-longest-prefix-match: backlog
   2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner: backlog
   epic-2-retrospective: optional

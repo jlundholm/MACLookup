@@ -38,6 +38,14 @@
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.
 
+## Deferred from: code review of story 2-1 (2026-10-11)
+
+- **`fetch` timeout / integrity validation:** `fetchCsv` (scripts/build-oui-data.ts:158-161) has no `AbortSignal`/timeout, so a stalled TCP connection hangs `npm run build:data` indefinitely; it also does no content-type/length/row-count validation beyond `res.ok` (the empty/partial-dataset consequence is covered by the F2 patch). Enhancement beyond AC scope.
+- **Symlinked-invocation entrypoint guard:** the guard (scripts/build-oui-data.ts:186) compares `import.meta.url` (realpath) to `pathToFileURL(process.argv[1])` (symlink path), so invoking the script through a symlink silently no-ops without writing the artifact. Normal `npm run build:data` passes the real path and is unaffected; would only matter if tooling ever symlinks the entrypoint.
+- **Embedded newline inside a quoted CSV field:** `parseCsv` (scripts/build-oui-data.ts:40-45) splits on `\r\n|\n|\r` before quote handling, so a quoted field containing a newline is split into two unbalanced lines and both are dropped silently. Documented single-line assumption for the IEEE registries; latent only if IEEE changes its format.
+- **AC5 size budget unenforced in CI:** the NFR5 budget is only a runtime `console.warn` (scripts/build-oui-data.ts:179-182); no test or gate asserts raw/compressed dataset size or the ≤3 MB total-package bound. Critical Decision 6 deliberately made size a warning rather than a build failure.
+- **`measureSizes` untested:** exported (scripts/build-oui-data.ts:152-156) but never imported by tests/build-oui-data.test.ts; only exercised indirectly by `main()`. The size budget is verified manually.
+
 ## Deferred from: code review of story 1-8 (2026-10-11)
 
 - **Template-literal interpolation blind spot:** the guard's string-aware stripper treats an entire backtick literal (including any `${…}` interpolation) as one opaque string, so network APIs or remote URLs hidden inside an interpolation expression are never scanned as code. Documented as Critical Decision 5 ("extend the stripper then"); no scanned `src` file performs network work inside interpolation today, and fail-closed is impossible because `src/main.ts:9` legitimately uses `` `…#${id}` ``. Revisit only if `src` gains interpolation that could carry a network target — proper handling needs template-depth tracking, not a regex.

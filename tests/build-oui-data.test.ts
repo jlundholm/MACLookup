@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseCsv, normalizePrefix, buildDataset } from '../scripts/build-oui-data';
 
 // Inline CSV fixtures — never committed "bad" files (1-8 lesson).
@@ -49,6 +49,18 @@ describe('parseCsv', () => {
   it('returns only the header for empty input after it', () => {
     expect(parseCsv(`${HEADER}\n`)).toHaveLength(1);
   });
+
+  it('skips whitespace-only lines', () => {
+    const rows = parseCsv(`${HEADER}\n   \nMA-L,286FB9,Katun,Addr\n`);
+    expect(rows).toHaveLength(2);
+    expect(rows[1][1]).toBe('286FB9');
+  });
+
+  it('takes a quote inside an unquoted field literally instead of dropping the line', () => {
+    const rows = parseCsv(`${HEADER}\nMA-L,F01898,AC"ME Corp,Addr\n`);
+    expect(rows).toHaveLength(2);
+    expect(rows[1][2]).toBe('AC"ME Corp');
+  });
 });
 
 describe('normalizePrefix', () => {
@@ -84,13 +96,10 @@ describe('normalizePrefix', () => {
 
 describe('buildDataset', () => {
   it('routes key length to the right bucket and keeps vendors verbatim', () => {
-    const csv = [
-      HEADER,
-      'MA-L,F01898,"Apple, Inc.",1 Infinite Loop',
-      'MA-M,AABBCCD,Samsung Electronics,Seoul',
-      'MA-S,8C1F64AFA,"DATA ELECTRONIC DEVICES, INC",Salem NH',
-    ].join('\n');
-    const ds = buildDataset(csv, csv, csv, () => '2026-10-11T00:00:00.000Z');
+    const maL = [HEADER, 'MA-L,F01898,"Apple, Inc.",1 Infinite Loop'].join('\n');
+    const maM = [HEADER, 'MA-M,AABBCCD,Samsung Electronics,Seoul'].join('\n');
+    const maS = [HEADER, 'MA-S,8C1F64AFA,"DATA ELECTRONIC DEVICES, INC",Salem NH'].join('\n');
+    const ds = buildDataset(maL, maM, maS, () => '2026-10-11T00:00:00.000Z');
 
     expect(ds.schemaVersion).toBe(1);
     expect(ds.generatedAt).toBe('2026-10-11T00:00:00.000Z');
@@ -103,9 +112,20 @@ describe('buildDataset', () => {
     expect(Object.keys(ds.entries)).toHaveLength(3);
   });
 
+  it('ingests each registry argument independently', () => {
+    // Three *distinct* CSVs: a bug that dropped or swapped the ma-m/ma-s args
+    // would fail this because their unique keys would be missing.
+    const maL = [HEADER, 'MA-L,F01898,Apple,Addr'].join('\n');
+    const maM = [HEADER, 'MA-M,AABBCCD,Samsung,Addr'].join('\n');
+    const maS = [HEADER, 'MA-S,8C1F64AFA,Quercus,Addr'].join('\n');
+    const ds = buildDataset(maL, maM, maS, () => '2026-10-11T00:00:00.000Z');
+    expect(ds.counts).toEqual({ l24: 1, m28: 1, s36: 1 });
+    expect(ds.entries).toEqual({ F01898: 'Apple', AABBCCD: 'Samsung', '8C1F64AFA': 'Quercus' });
+  });
+
   it('sum of counts equals entries size', () => {
     const csv = [HEADER, 'MA-L,F01898,Apple,Addr', 'MA-L,E80AB9,"Cisco Systems, Inc",Addr'].join('\n');
-    const ds = buildDataset(csv, csv, csv, () => '2026-10-11T00:00:00.000Z');
+    const ds = buildDataset(csv, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
     const sum = ds.counts.l24 + ds.counts.m28 + ds.counts.s36;
     expect(sum).toBe(Object.keys(ds.entries).length);
     expect(ds.counts).toEqual({ l24: 2, m28: 0, s36: 0 });
@@ -118,25 +138,40 @@ describe('buildDataset', () => {
       'MA-L,F01898,,Addr',
       'MA-L,E80AB9,Cisco,Addr',
     ].join('\n');
-    const ds = buildDataset(csv, csv, csv, () => '2026-10-11T00:00:00.000Z');
+    const ds = buildDataset(csv, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
     expect(Object.keys(ds.entries)).toEqual(['E80AB9']);
   });
 
-  it('routes by key length even when the Registry column disagrees', () => {
+  it('routes by key length even when the Registry column disagrees, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // Registry says MA-M but the assignment is 6 hex — length is authoritative (AC3).
     const csv = [HEADER, 'MA-M,F01898,Apple,Addr'].join('\n');
-    const ds = buildDataset(csv, csv, csv, () => '2026-10-11T00:00:00.000Z');
+    const ds = buildDataset(csv, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
     expect(ds.counts).toEqual({ l24: 1, m28: 0, s36: 0 });
     expect(ds.entries['F01898']).toBe('Apple');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
-  it('sorts entry keys ascending (canonical, deterministic regardless of CSV order)', () => {
-    // '286FB9' is integer-like in JS; 'FFFFFF' is not. Sorted insertion keeps order canonical.
-    const csvA = [HEADER, 'MA-L,FFFFFF,Zed,Addr', 'MA-L,286FB9,Abe,Addr'].join('\n');
-    const csvB = [HEADER, 'MA-L,286FB9,Abe,Addr', 'MA-L,FFFFFF,Zed,Addr'].join('\n');
-    const dsA = buildDataset(csvA, csvA, csvA, () => '2026-10-11T00:00:00.000Z');
-    const dsB = buildDataset(csvB, csvB, csvB, () => '2026-10-11T00:00:00.000Z');
-    expect(Object.keys(dsA.entries)).toEqual(['286FB9', 'FFFFFF']);
+  it('warns when a duplicate prefix overwrites an entry (last value wins)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const csv = [HEADER, 'MA-L,080030,First,Addr', 'MA-L,080030,Second,Addr'].join('\n');
+    const ds = buildDataset(csv, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
+    expect(ds.counts.l24).toBe(1);
+    expect(ds.entries['080030']).toBe('Second');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('produces deterministic, engine-defined key order regardless of CSV row order', () => {
+    // '100000' is integer-like in JS (all decimal digits); '00000A' is not.
+    // JS enumerates integer-like keys first, so emitted order is numeric-first
+    // then lexicographic — not a pure sort — but stable across input order.
+    const csvA = [HEADER, 'MA-L,00000A,Zed,Addr', 'MA-L,100000,Abe,Addr'].join('\n');
+    const csvB = [HEADER, 'MA-L,100000,Abe,Addr', 'MA-L,00000A,Zed,Addr'].join('\n');
+    const dsA = buildDataset(csvA, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
+    const dsB = buildDataset(csvB, HEADER, HEADER, () => '2026-10-11T00:00:00.000Z');
+    expect(Object.keys(dsA.entries)).toEqual(['100000', '00000A']);
     expect(Object.keys(dsA.entries)).toEqual(Object.keys(dsB.entries));
     expect(JSON.stringify(dsA.entries)).toBe(JSON.stringify(dsB.entries));
   });
@@ -150,11 +185,19 @@ describe('buildDataset', () => {
     ].join('\n');
     const t1 = () => '2026-10-11T00:00:00.000Z';
     const t2 = () => '2026-10-12T12:34:56.000Z'; // different timestamp only
-    const ds1 = buildDataset(csv, csv, csv, t1);
-    const ds2 = buildDataset(csv, csv, csv, t2);
+    const ds1 = buildDataset(csv, HEADER, HEADER, t1);
+    const ds2 = buildDataset(csv, HEADER, HEADER, t2);
     expect(ds1.entries).toEqual(ds2.entries);
     expect(ds1.counts).toEqual(ds2.counts);
     expect(ds1.generatedAt).not.toBe(ds2.generatedAt); // timestamp is expected to change
+  });
+
+  it('throws on an empty registry (no header)', () => {
+    expect(() => buildDataset('', HEADER, HEADER)).toThrow();
+  });
+
+  it('throws when required header columns are missing', () => {
+    expect(() => buildDataset('Foo,Bar\n1,2', HEADER, HEADER)).toThrow();
   });
 });
 
