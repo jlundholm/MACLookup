@@ -37,8 +37,11 @@
 # CONDITIONAL SCOPE:
 # ==================
 # - Epic 3 (FR8, Chrome Web Store publish readiness) is CONDITIONAL on the publish
-#   decision and on resolving OQ-1 (IEEE data licensing). It is NOT required for the
-#   personal-use build. Treat epic-3 and its stories as optional until publishing is chosen.
+#   decision. OQ-1 (IEEE data licensing) was RESOLVED 2026-10-14 (Option A — IEEE's
+#   public listing carries no redistribution restriction). Epic 3 is NOT required for
+#   the personal-use build. Treat epic-3 and its stories as optional until publishing
+#   is chosen.
+#   See _bmad-output/planning-artifacts/oq-1-ieee-redistribution-resolution.md
 
 generated: 2026-10-10
 last_updated: 2026-10-11

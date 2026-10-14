@@ -54,7 +54,7 @@ network, no persistence, and no cross-surface state.
 - MV3 CSP forbids inline scripts → CSS-first theming; no anti-FOUC inline script.
 - Chrome exposes only light/dark (no accent colors) → neutral focus ring, status-only color.
 - Clipboard write needs no permission under a user gesture.
-- OUI dataset sourced from IEEE at build time; redistribution licensing (OQ-1) unresolved.
+- OUI dataset sourced from IEEE at build time; redistribution licensing (OQ-1) **resolved 2026-10-14 (Option A)** — see `oq-1-ieee-redistribution-resolution.md`.
 - No runtime network path by design — the DB must be self-contained.
 
 ### Cross-Cutting Concerns Identified
@@ -165,7 +165,7 @@ dataset is a generated asset consumed by the lookup module. `manifest.json` +
 - Full IEEE registry metadata (PRD OQ-3) — not needed by any FR.
 - E2E/DOM test framework — pure-logic unit tests cover v1's risk.
 - CI pipeline — handy, not required for a single-author build.
-- Chrome Web Store publication (FR-8) and IEEE licensing (OQ-1) — both gated on a publish decision.
+- Chrome Web Store publication (FR-8) — gated on a publish decision. IEEE licensing (OQ-1) resolved 2026-10-14 (Option A); no longer a blocker.
 - Remote registry refresh (OQ-2) — explicitly excluded by design.
 
 ### Data Architecture
@@ -536,7 +536,7 @@ The `lib → data/ui → main` layering and the one-way dependency rule support 
 
 ### Validation Issues Addressed
 
-No critical or blocking issues. The important gaps above are verification tasks assigned to early stories, not missing architectural decisions. The IEEE licensing question (OQ-1) remains an open product/legal item that gates **publication only** (FR-8); it does not affect the personal-use build.
+No critical or blocking issues. The important gaps above are verification tasks assigned to early stories, not missing architectural decisions. The IEEE licensing question (OQ-1) was **resolved 2026-10-14** (Option A — IEEE's public listing carries no redistribution restriction; see `oq-1-ieee-redistribution-resolution.md`); it gated **publication only** (FR-8) and never affected the personal-use build.
 
 ### Architecture Completeness Checklist
 

@@ -497,6 +497,8 @@ So that I can tell "vendor found," "looked up, no match," and "invalid" apart at
 
 If Jared decides to publish, OUI Scout can be submitted with a minimal-permission, no-collection posture: a store listing and privacy policy stating "no data collection," a packaged zip, and the privacy guard suite passing against the final build. Conditional on the publish decision (and resolving OQ-1).
 
+> **OQ-1 resolved 2026-10-14** (Option A — IEEE's public listing carries no redistribution restriction; see `oq-1-ieee-redistribution-resolution.md`). The Story 3.2 licensing gate is therefore cleared; only the publish decision itself remains.
+
 **FRs covered:** FR8
 
 ### Story 3.1: Package the built extension for store submission

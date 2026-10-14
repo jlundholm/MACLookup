@@ -2,7 +2,7 @@
 title: OUI Scout — Product Requirements Document
 status: final
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-14
 ---
 
 # PRD: OUI Scout
@@ -169,7 +169,7 @@ The extension can be published with no data collection and no meaningful install
 - A store listing and privacy policy stating "no data collection" are present.
 - A network trace during a full lookup and copy shows zero outbound requests.
 
-**Notes:** `[NOTE FOR PM]` Publishing is gated on resolving OQ-1 (IEEE data licensing).
+**Notes:** `[NOTE FOR PM]` Publishing was gated on resolving OQ-1 (IEEE data licensing); **OQ-1 is now resolved** (2026-10-14, Option A — see `../oq-1-ieee-redistribution-resolution.md`). The gate is cleared.
 
 ## 5. Non-Goals (Explicit)
 
@@ -237,7 +237,7 @@ Feature-level deferrals — extra formats, other browsers, a manual theme toggle
 
 **Platform.** Chrome MV3 constraints shape the build: CSP forbids inline scripts (so CSS-first theming, not an inline anti-FOUC script); the browser exposes only light/dark, not accent colors; clipboard copy via `navigator.clipboard.writeText()` under a user gesture needs no permission.
 
-**Data.** The OUI database is bundled from IEEE data; the redistribution question is carried as OQ-1 and is a launch-blocker only if published.
+**Data.** The OUI database is bundled from IEEE data; the redistribution question (OQ-1) is **resolved** (Option A — IEEE's public listing carries no redistribution restriction; see `../oq-1-ieee-redistribution-resolution.md`). No longer a launch-blocker.
 
 ## 10. Aesthetic and Tone
 
@@ -245,7 +245,7 @@ Native, unobtrusive, fast. The popup should look like it belongs in Chrome — s
 
 ## 11. Open Questions
 
-- **OQ-1:** IEEE redistribution license — resolve before publishing. Options: adopt an openly licensed dataset, seek IEEE permission, or accept the risk with clear attribution. *(Launch-blocker if published; irrelevant for personal use.)*
+- **OQ-1 (RESOLVED 2026-10-14):** IEEE redistribution license — resolved via **Option A** (rely on IEEE's non-assertion of copyright; the public listing carries no redistribution restriction, per the Debian `ieee-data` precedent). The bundled dataset is fetched directly from the IEEE Registration Authority; no pipeline change. *(Was a launch-blocker if published; now cleared for Story 3.2.)* See `../oq-1-ieee-redistribution-resolution.md`.
 - **OQ-2:** Refresh cadence for the bundled database, and who runs the build step.
 - **OQ-3:** Whether to ship vendor-name-only indexes (smaller) versus full registry data to reduce package size.
 - **OQ-4:** Trademark/name clearance for "OUI Scout" if the extension is ever commercialized. Low risk while free (no existing "OUI Scout" product found), but "Scout" alone is a crowded, contested term with active USPTO activity; formal clearance only if commercialized.

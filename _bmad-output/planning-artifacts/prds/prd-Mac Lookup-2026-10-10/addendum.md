@@ -2,7 +2,7 @@
 title: OUI Scout — PRD Addendum
 status: final
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-14
 ---
 
 # Addendum: OUI Scout
@@ -32,7 +32,7 @@ Technical detail and research that belongs in downstream documents (architecture
 - Vendor-name-only MA-L index (6-hex → name): 1,225,531 B raw / 419,784 B gzip.
 - **Selected for v1:** MA-L + MA-M + MA-S = ≈54,000 prefixes; combined **≈5.29 MB raw / ≈1.77 MB gzip**. (The brief's ≈5.67 MB / ≈1.93 MB figure is the three MA registries *plus* legacy IAB.) Legacy IAB is not included in v1.
 - Registries regenerate daily (~02:00 UTC).
-- **License:** IEEE asserts copyright; Terms of Use grant one personal copy and prohibit redistributing significant portions without permission. Bundling and redistributing in a published extension is legally uncertain — see PRD OQ-1.
+- **License:** IEEE's current Registration Authority public listing carries no redistribution restriction. The Debian `ieee-data` package copyright file records IEEE's position: *"IEEE does not assert any copyright in the OUI Public Listing or attempt to restrict distribution of the listing in any way."* Earlier, informal reports of a redistribution prohibition are not corroborated by IEEE's current terms. Bundling the data in a published extension is treated as acceptable — **OQ-1 resolved (Option A)**; see `../oq-1-ieee-redistribution-resolution.md`.
 
 ## OUI lookup APIs (rejected alternatives)
 
