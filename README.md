@@ -155,7 +155,11 @@ tests/                     Privacy guard + build-script tests
 
 ## Versioning
 
-- Bump the extension version in **`manifest.json`** only (currently `0.9.0`).
+- Bump the extension version in **`manifest.json`** only (currently `0.0.9`).
+  The **rightmost** segment increments once per story/release (`0.0.9` →
+  `0.0.10`) — start low, leave room to grow, per the Chrome Web Store "prepare"
+  guidance. (Earlier history used the middle segment — `0.1.0` … `0.9.0` —
+  renumbered to `0.0.9` on 2026-10-14.)
 - `package.json`'s `version` is the private npm package version and is not bumped.
 
 ## Status

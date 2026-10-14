@@ -32,14 +32,15 @@ So that I can upload a consistent, versioned build to the Chrome Web Store.
 
 - [ ] Task 1: Add the `zip` script entry and bump the extension version (AC: 1, 2)
   - [ ] In `package.json` `scripts`, add `"zip": "tsx scripts/package-extension.ts"` alongside the existing entries (same `tsx` runner as `build:data`; no new dependencies of any kind).
-  - [ ] Bump `manifest.json` `version` from `0.9.0` to `0.10.0` (project-context: manifest-only minor bump per story's dev work; `package.json` stays `0.0.1`; MV3 permits 1–4 dot-separated integers each 0–65535, no leading zeros).
-- [ ] Task 2: Implement `scripts/package-extension.ts` — validation first, zip second (AC: 1, 2, 3; Critical Decisions 1–6)
+  - [ ] Bump `manifest.json` `version` from `0.0.9` to `0.0.10` (project-context: manifest-only bump of the **rightmost** segment per story's dev work; `package.json` stays `0.0.1`; MV3 permits 1–4 dot-separated integers each 0–65535, no leading zeros — `0.0.10` is valid).
+- [ ] Task 2: Implement `scripts/package-extension.ts` — validation first, zip second (AC: 1, 2, 3; Critical Decisions 1–6, 9)
   - [ ] Give the file the same header treatment as `scripts/build-oui-data.ts`: a doc comment stating it is the **build-time packaging surface**, lives outside `src/` on purpose, and is excluded from the runtime privacy guard (which scans `src/` only).
   - [ ] Export a **pure** `packageViolations(inputs): string[]` function that takes raw inputs (no filesystem reads inside it) — `rootManifestRaw`, `distManifestRaw`, `datasetRaw`, `publicDatasetRaw` (all strings), and `distFiles: string[]` (relative paths present in `dist/`) — and returns every violation found. Checks, all of which fail the run when non-empty:
     - `manifest_version === 3` in the dist manifest;
     - dist manifest `version` **equals** root `manifest.json` `version`;
     - `permissions` / `host_permissions` absent or `[]`; `background` and `content_scripts` absent (the same invariants `tests/privacy.guard.test.ts:17-37` asserts on the root manifest — Critical Decision 5);
     - every file the dist manifest references exists in `distFiles`: `action.default_popup`, every key of `icons`, every key of `action.default_icon`;
+    - store-manifest lint (the CWS "Review your manifest" checklist — Critical Decision 9): non-empty `name`; `description` present and **≤ 132 characters**; `version` well-formed (1–4 dot-separated integers, each 0–65535, no leading zeros — the rightmost-segment scheme's sanity net);
     - `dist/oui-data.json` parses and has `schemaVersion` (int), `generatedAt` (ISO-8601 string), `counts`, and a non-empty `entries` object;
     - `dist/oui-data.json` is **byte-identical** to `public/oui-data.json` (catches a hand-edited or stale dataset).
   - [ ] Export a pure `readVersions(distManifestRaw, datasetRaw)` helper that returns the two records AC2 inspects: `{ extension: manifest.version }` and `{ schemaVersion, generatedAt, counts }` from the dataset.
@@ -53,21 +54,21 @@ So that I can upload a consistent, versioned build to the Chrome Web Store.
 - [ ] Task 3: Ship `tests/package-extension.test.ts` (AC: 1, 2, 3)
   - [ ] Node-env Vitest (already in `vitest.config.ts` `include: ['src/**', 'tests/**']`), importing the two pure exports from `../scripts/package-extension`.
   - [ ] Inline JSON fixtures only — **never** committed "bad" files (the Story 1.8 lesson): build manifest/dataset literals with `JSON.stringify` inside the test.
-  - [ ] Cover: a valid package → `[]`; version mismatch (root `0.10.0` vs dist `0.9.0`); a dev-augmented dist manifest carrying `background`; `permissions: ['tabs']`; a manifest referencing a missing icon; `host_permissions` present; malformed/missing dataset keys; a dist dataset that differs from `public/`'s; and `readVersions` returning both records verbatim.
+  - [ ] Cover: a valid package → `[]`; version mismatch (root `0.0.10` vs dist `0.0.9`); a dev-augmented dist manifest carrying `background`; `permissions: ['tabs']`; a manifest referencing a missing icon; `host_permissions` present; a 133-character `description`; an empty `name`; a malformed `version` (`01.0`, and one segment over 65535); malformed/missing dataset keys; a dist dataset that differs from `public/`'s; and `readVersions` returning both records verbatim.
   - [ ] Nothing is added under `src/` — there is nothing to unit-test there (see Out of Scope). Record in Completion Notes that `git status` shows zero `src/**` changes, and that the privacy guard passed untouched.
 - [ ] Task 4: Documentation and housekeeping (AC: 1, 2)
   - [ ] `.gitignore`: add a `release/` entry (packaged artifacts are build output, never committed — same treatment as `dist/`).
   - [ ] `README.md`:
     - add `npm run zip` to the **Project scripts** table (packages `dist/` into `release/oui-scout-<version>.zip` for store upload);
-    - update **Versioning** "currently `0.9.0`" → "`0.10.0`";
+    - update **Versioning** "currently `0.0.9`" → "`0.0.10`" (the rightmost-segment rule is already documented there from the 2026-10-14 scheme rebase — only the current number moves in this story);
     - add a short **Packaging for the Chrome Web Store** block: `npm run build && npm run zip`, then `unzip -l release/…` confirms `manifest.json` at the archive root.
   - [ ] Leave README's **Status** section ("Not yet submitted") alone — still true until Story 3.2 publishes.
 - [ ] Task 5: Run the gates and package (AC: 1, 2, 3; all Critical Decisions)
-  - [ ] `npm run typecheck` → 0 errors; `npm test` → full suite green (228 tests at baseline, incl. the untouched privacy guard); `npm run build` → production build succeeds.
+  - [ ] `npm run typecheck` → 0 errors; `npm test` → full suite green (229 tests at baseline, incl. the untouched privacy guard); `npm run build` → production build succeeds.
   - [ ] `npm run zip` → prints the version block and exits 0.
-  - [ ] `unzip -l release/oui-scout-0.10.0.zip` → `manifest.json`, `index.html`, `oui-data.json`, `icons/*`, `assets/*` all at the archive root (no `dist/` prefix folder).
+  - [ ] `unzip -l release/oui-scout-0.0.10.zip` → `manifest.json`, `index.html`, `oui-data.json`, `icons/*`, `assets/*` all at the archive root (no `dist/` prefix folder).
   - [ ] **Dev-dist rejection drill:** confirm the guard actually fires — e.g. run `npm run dev` once (which augments `dist/manifest.json` with a dev service worker), then `npm run zip` must fail and tell you to rebuild. Re-run `npm run build` afterward so `dist/` is a production build again (README's dev-mode caveat).
-  - [ ] **Manual AC3 verification** (record the result in Completion Notes): `unzip release/oui-scout-0.10.0.zip -d /tmp/oui-scout-pkg` → `chrome://extensions` → Developer mode → **Load unpacked** `/tmp/oui-scout-pkg` → no install-time permission warning appears, the popup opens, and a known MAC still resolves its vendor. This is the last-mile check no unit test can make.
+  - [ ] **Manual AC3 verification** (record the result in Completion Notes): `unzip release/oui-scout-0.0.10.zip -d /tmp/oui-scout-pkg` → `chrome://extensions` → Developer mode → **Load unpacked** `/tmp/oui-scout-pkg` → no install-time permission warning appears, the popup opens, and a known MAC still resolves its vendor. This is the last-mile check no unit test can make.
 
 ### Review Findings
 
@@ -77,9 +78,9 @@ _(added by code-review)_
 
 Epic 3 opens with the smallest of its three stories: no runtime code, no UI, no data work — a packaging tool plus the verification that what lands in the zip is the same zero-permission, offline artifact Epic 1 and 2 built. Epic 3 is **conditional** on the publish decision (sprint-status.yaml, FR8), and OQ-1 is already resolved (2026-10-14, Option A), so nothing gates this story.
 
-**Read before writing.** Files this story touches: `package.json`, `manifest.json`, `.gitignore`, `README.md`, plus two **new** files (`scripts/package-extension.ts`, `tests/package-extension.test.ts`). Existing code to read first: `scripts/build-oui-data.ts` (the house style for a `scripts/*.ts` build tool: doc header, exported pure helpers, `node:` imports, main() at the bottom), `tests/build-oui-data.test.ts` (the house style for testing one: inline fixtures, import from `../scripts/…`), and `tests/privacy.guard.test.ts:17-37` (the manifest invariants you are mirroring for the dist copy).
+**Read before writing.** Files this story touches: `package.json`, `manifest.json`, `.gitignore`, `README.md`, plus two **new** files (`scripts/package-extension.ts`, `tests/package-extension.test.ts`). Note that `manifest.json` already reads `0.0.9`: the version scheme was rebased **before** this story's dev (2026-10-14) — `0.9.0` was renumbered to `0.0.9`, and from now on the **rightmost** segment increments per story (see project-context.md). Existing code to read first: `scripts/build-oui-data.ts` (the house style for a `scripts/*.ts` build tool: doc header, exported pure helpers, `node:` imports, main() at the bottom), `tests/build-oui-data.test.ts` (the house style for testing one: inline fixtures, import from `../scripts/…`), and `tests/privacy.guard.test.ts:17-37` (the manifest invariants you are mirroring for the dist copy).
 
-**What already works and must not break:** the entire runtime extension — parser, formatter, clipboard, dataset, lookup, banner, a11y floor — is untouched by this story; the privacy guard's root-manifest and `src/` scans; `npm run build` output shape (`dist/` = `manifest.json`, `index.html`, `oui-data.json`, `icons/`, `assets/`). Baseline: 228 tests green, `dist` 1,942,154 B uncompressed (NFR5's ~2 MB dataset / ~3 MB package budgets met with headroom).
+**What already works and must not break:** the entire runtime extension — parser, formatter, clipboard, dataset, lookup, banner, a11y floor — is untouched by this story; the privacy guard's root-manifest and `src/` scans; `npm run build` output shape (`dist/` = `manifest.json`, `index.html`, `oui-data.json`, `icons/`, `assets/`). Baseline: 229 tests green, `dist` 1,942,154 B uncompressed (NFR5's ~2 MB dataset / ~3 MB package budgets met with headroom).
 
 ### Critical Decisions
 
@@ -97,19 +98,21 @@ Epic 3 opens with the smallest of its three stories: no runtime code, no UI, no 
 
 7. **Output goes to `release/oui-scout-<version>.zip`, gitignored, exactly one at a time.** Version-stamped filenames keep uploads unambiguous (CWS rejects a re-upload without a version bump — the dashboard warns you cannot edit manifest metadata after upload), while deleting stale ones keeps `release/` from becoming an archive of guesses. `release/` joins `dist/` in `.gitignore`: build output, never committed.
 
-8. **Version `0.9.0` → `0.10.0`, manifest only.** project-context.md:9-13 — bump `manifest.json`'s minor for every story's dev work; `package.json` version stays `0.0.1`; segments are 0–65535 so `0.10.0` is valid (leading zeros forbidden, and `10` has none). This is also what CWS compares for future updates.
+8. **Version `0.0.9` → `0.0.10`, manifest only — rightmost-segment increments.** project-context.md (Release versioning): bump the **rightmost** segment of `manifest.json`'s `version` for every story's dev work; `package.json` version stays `0.0.1`. This scheme was rebased 2026-10-14 (the old middle-segment `0.9.0` became `0.0.9`), following the CWS "prepare" guidance to start low and leave room to grow — which also makes the growth story obvious to reviewers. MV3 segments are 0–65535 with no leading zeros, so `0.0.10` is valid, and Chrome compares updates segment-wise numerically (`0.0.10` > `0.0.9`).
+
+9. **The prepare-page manifest checklist is enforced at package time.** CWS "Prepare your extension" requires `name`, `version`, `icons`, and `description` (≤ 132 characters) to be right *before* upload — manifest metadata is immutable after the item is created, so a typo costs a version bump and a re-zip. `packageViolations` therefore lints description length, name presence, and version format alongside the privacy invariants (the icon/popup existence checks already cover `icons` and `action.default_popup`). A malformed-JSON `dist/manifest.json` fails earlier at `JSON.parse` — which is also the prepare page's "Cannot parse the manifest" guard (comments in JSON). Current description is 52 characters; the lint keeps it that way.
 
 ### Behavior / Contract Table
 
 | Surface | Before (this story) | After |
 |---|---|---|
 | `package.json` scripts | no `zip` entry | `"zip": "tsx scripts/package-extension.ts"` |
-| `scripts/package-extension.ts` | — | NEW — pure `packageViolations` + `readVersions`, thin `main()` |
+| `scripts/package-extension.ts` | — | NEW — pure `packageViolations` (privacy invariants + CWS manifest lint) + `readVersions`, thin `main()` |
 | `tests/package-extension.test.ts` | — | NEW — inline-fixture coverage of both exports |
-| `manifest.json` version | `0.9.0` | `0.10.0` |
-| `release/` | does not exist | created by `npm run zip`, gitignored, holds `oui-scout-0.10.0.zip` |
+| `manifest.json` version | `0.0.9` | `0.0.10` |
+| `release/` | does not exist | created by `npm run zip`, gitignored, holds `oui-scout-0.0.10.zip` |
 | `.gitignore` | no `release/` | `release/` ignored |
-| `README.md` | scripts table without `zip`; "currently `0.9.0`" | `zip` row + packaging block; "currently `0.10.0`" |
+| `README.md` | scripts table without `zip`; "currently `0.0.9`" | `zip` row + packaging block; "currently `0.0.10`" |
 | `dist/` manifest | production build, no `background` | unchanged (but a dev-augmented one is now **refused**) |
 | `src/**` | — | **zero changes** |
 | dataset schema | `schemaVersion`/`generatedAt`/`sources`/`counts`/`entries` | unchanged — reported, not extended |
@@ -119,28 +122,28 @@ Epic 3 opens with the smallest of its three stories: no runtime code, no UI, no 
 - **Vitest node environment, `tests/` directory** — same precedent as `tests/build-oui-data.test.ts` (build-script tests live in `tests/`, not co-located beside `scripts/`).
 - **Pure functions take strings and arrays** — no `readFileSync` inside the tested code paths, so `npm test` passes on a clean clone with no `dist/` and no `release/`. Never make the suite depend on a prior `npm run build`.
 - **Inline fixtures only** — construct manifests/datasets via object literals + `JSON.stringify` in the test body. No committed "bad manifest" files (Story 1.8 lesson, restated in 2.3).
-- **The full existing suite must stay green** — 228 tests at baseline, privacy guard untouched. A new test count of ~236+ is expected (exact number is the dev agent's to report honestly).
-- **Negative-path tests are the value here**: each violation class (version drift, dev `background`, permissions, missing icon, dataset drift, byte mismatch) gets its own assertion that it produces a non-empty `[]`-to-violations list, plus one happy path proving a correct package reports none.
+- **The full existing suite must stay green** — 229 tests at baseline (re-verified 2026-10-14 after the versioning rebase), privacy guard untouched. A new test count of ~236+ is expected (exact number is the dev agent's to report honestly).
+- **Negative-path tests are the value here**: each violation class (version drift, dev `background`, permissions, missing icon, description > 132 chars, empty `name`, malformed version, dataset drift, byte mismatch) gets its own assertion that it produces a non-empty violations list, plus one happy path proving a correct package reports none.
 - **Do not test the shell-out.** The `zip` spawn and `process.exit` stay in untestable `main()` glue; the review will ask whether pure logic leaked into it.
 
 ### Previous Story Intelligence (Story 2.3 hand-off)
 
-- **Gates baseline:** `typecheck` 0 errors, `npm test` **228 passed / 8 files**, `npm run build` OK; `dist/oui-data.json` byte-identical to `public/oui-data.json` (1,895,897 B). 2-3 verified that equality by hand with `sha256` — this story automates it inside `packageViolations`.
-- **Manifest bump mechanics:** 2-3's task was written verbatim as "bump `manifest.json` `version` from `0.8.0` to `0.9.0`" and executed as such; do the same here (`0.9.0` → `0.10.0`) and keep `package.json` untouched.
+- **Gates baseline:** `typecheck` 0 errors, `npm test` **228 passed / 8 files** at 2-3 close (**229** re-verified at 3-1 creation), `npm run build` OK; `dist/oui-data.json` byte-identical to `public/oui-data.json` (1,895,897 B). 2-3 verified that equality by hand with `sha256` — this story automates it inside `packageViolations`.
+- **Manifest bump mechanics:** 2-3's task was written verbatim as "bump `manifest.json` `version` from `0.8.0` to `0.9.0`" and executed as such; do the same here (`0.0.9` → `0.0.10`) under the **new rightmost-segment scheme** (rebased 2026-10-14 — old middle-segment `0.9.0` was renumbered to `0.0.9`; historical story files keep their old numbers as written) and keep `package.json` untouched.
 - **Review discipline learned in 2-3:** comments must match the code they explain (a patch was filed for a stale "disabled on empty" comment); Dev Agent Record must include the tracking docs in the File List/Change Log (2-3 got patched for omitting them); completion claims must not overstate (a "grep-clean" claim was corrected). Report `npm test` counts and `unzip -l` output exactly as observed.
 - **Never-touch list carried forward:** `src/data/load-oui-data.ts`'s inline `fetch(chrome.runtime.getURL('oui-data.json'))` must stay byte-identical; no `src/**` file needs a change for 3.1.
 - **The last-mile gap:** 2-3 shipped with "no manual in-browser walkthrough was performed." This story's whole point is a package a human loads — the manual unzip + Load unpacked step is required, not optional.
 
 ### Git Intelligence
 
-- Baseline: `254c84f` ("Update sprint-status.yaml"), working tree clean apart from the sprint-status epic-3 status edit made when this story was created.
+- Baseline: `254c84f` ("Update sprint-status.yaml"). The working tree at story-creation time carries the sprint-status epic-3 edit **and** the pre-story versioning rebase (uncommitted): `manifest.json` `0.9.0` → `0.0.9`, project-context.md and README.md updated to the rightmost-segment rule. Those changes are the starting state of this story's dev, not part of its tasks.
 - Commit pattern in this repo: `story <id> dev` then `story <id> review` — follow it; never commit unless asked.
 - Recent history confirms no packaging tooling exists yet: `package.json` has no `zip`, no `release/`, no packaging script — nothing to extend, nothing to conflict with.
 
 ### Latest Technical Information
 
 - **No new libraries or versions** — this story adds zero npm dependencies. The runner (`tsx` ^4.23), test framework (Vitest ^4.1.11), and build (Vite ^8.3.0 + `@crxjs/vite-plugin` ^3.0.0) are unchanged from the architecture's pinned stack.
-- **Chrome Web Store packaging rules** (developer.chrome.com/docs/webstore/prepare, /publish): submit a ZIP containing all extension files with `manifest.json` at the root; manifest metadata is not editable after upload (fix = edit + bump version + re-zip); package max 2 GB (our budget is 3 MiB); every file the manifest references must exist in the package (icons are the usual casualty — hence the `distFiles` check); "test the exact files that you submit … this may mean extracting resources from the package" — the unzip-and-load-unpacked subtask is exactly that.
+- **Chrome Web Store packaging rules** (developer.chrome.com/docs/webstore/prepare, /publish): submit a ZIP containing all extension files with `manifest.json` at the root; manifest metadata is not editable after upload (fix = edit + bump version + re-zip); manifest must carry `name`, `version`, `icons`, and `description` ≤ 132 chars (now linted — Critical Decision 9); package max 2 GB (our budget is 3 MiB); every file the manifest references must exist in the package (icons are the usual casualty — hence the `distFiles` check); "test the exact files that you submit … this may mean extracting resources from the package" — the unzip-and-load-unpacked subtask is exactly that.
 - **System prerequisite:** `zip` at `/usr/bin/zip` and `unzip` at `/usr/bin/unzip` are present on this machine.
 
 ### Out of Scope (do not touch)
@@ -170,8 +173,8 @@ Epic 3 opens with the smallest of its three stories: no runtime code, no UI, no 
 - [Source: project-context.md] — manifest-only version bump rule; gates (`typecheck` + `test` + `build`); zero-permission posture; no barrel files.
 - [Source: README.md — "Verification caveat"] — CRXJS dev augments `dist/manifest.json` with a dev service worker (Critical Decision 3).
 - [Source: _bmad-output/implementation-artifacts/deferred-work.md] — the CSP entry reserved for the store-publish epic (3.x); 2-2/2-3 review deferrals (none touch packaging).
-- [Source: _bmad-output/implementation-artifacts/2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner.md] — gates baseline (228 tests), manifest bump precedent, review-discipline lessons.
-- [Source: https://developer.chrome.com/docs/webstore/prepare + /publish] — zip layout, root manifest, post-upload immutability, 2 GB cap, "test the exact files you submit".
+- [Source: _bmad-output/implementation-artifacts/2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner.md] — gates baseline (228 at 2-3 close, 229 re-verified at 3-1 creation), manifest bump precedent, review-discipline lessons.
+- [Source: https://developer.chrome.com/docs/webstore/prepare + /publish] — zip layout, root manifest, post-upload immutability, manifest field checklist (`name`/`version`/`icons`/`description` ≤ 132 chars), "Cannot parse the manifest" (no comments in JSON), 2 GB cap, "test the exact files you submit".
 
 ## Dev Agent Record
 

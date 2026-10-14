@@ -499,6 +499,8 @@ If Jared decides to publish, OUI Scout can be submitted with a minimal-permissio
 
 > **OQ-1 resolved 2026-10-14** (Option A — IEEE's public listing carries no redistribution restriction; see `oq-1-ieee-redistribution-resolution.md`). The Story 3.2 licensing gate is therefore cleared; only the publish decision itself remains.
 
+> **Prerequisite (human, not a story):** publishing requires a registered Chrome Web Store developer account — one-time registration fee, Google account (developer.chrome.com/docs/webstore/register). This is Jared's task before Story 3.2's submission step; no story implements it.
+
 **FRs covered:** FR8
 
 ### Story 3.1: Package the built extension for store submission
@@ -536,6 +538,14 @@ So that publication meets Chrome Web Store requirements without weakening the pr
 **Given** the shipped manifest,
 **When** it is inspected,
 **Then** it declares no host permissions and no runtime permission beyond what a user-gesture clipboard write requires (FR8).
+
+**Given** the store listing assets,
+**When** the listing is prepared in the developer dashboard,
+**Then** it includes at least one screenshot of the shipped popup (light and dark preferred) captured from the **built** `dist/` — not the dev harness — and no image or claim that misrepresents the extension's single purpose (FR8; CWS "Supplying Images" / listing requirements).
+
+**Given** the developer dashboard's Privacy tab,
+**When** the privacy fields are completed,
+**Then** the single-purpose statement names MAC conversion + offline OUI vendor lookup, the remote-code question is answered **No** (true by construction — no remote code, no eval; enforced by the Story 1.8 guard suite and verified in Story 3.3), and the data-collection declaration is **no data collected**, consistent with the privacy policy (FR8).
 
 **Given** the open licensing question,
 **When** publication is attempted,

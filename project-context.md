@@ -6,9 +6,15 @@ Standing rules for AI agents working in this repo. BMAD workflows (`dev-story`,
 
 ## Release versioning
 
-- **Increment the extension minor version for every story's dev work.** Bump
-  `manifest.json`'s `version` field only (e.g. `0.0.1` → `0.1.0`).
-  `package.json` is a private npm package version and is **not** bumped.
+- **Increment the rightmost version segment for every story's dev work.** The
+  version keeps three dot-separated segments; only the **rightmost** moves per
+  story (e.g. `0.0.9` → `0.0.10`) — following the Chrome Web Store "prepare"
+  guidance to start low and leave room to grow. Bump `manifest.json`'s
+  `version` field only. `package.json` is a private npm package version and is
+  **not** bumped.
+- Scheme rebased 2026-10-14: the earlier middle-segment scheme (`0.1.0` …
+  `0.9.0`) was renumbered so `0.9.0` became `0.0.9`; all bumps after the rebase
+  increment the rightmost segment.
 - Chrome MV3 versions must be 1–4 dot-separated integers, each 0–65535, with no
   leading zeros.
 
