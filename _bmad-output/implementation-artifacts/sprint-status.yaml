@@ -53,7 +53,7 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Convert a MAC into every format you need — offline and native
-  epic-1: in-progress
+  epic-1: done
   1-1-scaffold-the-extension-zero-permission-manifest-and-popup-shell: done
   1-2-design-tokens-typography-and-automatic-light-dark-theming: done
   1-3-paste-and-normalize-any-common-mac-form: done
@@ -65,7 +65,7 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Name the device behind the MAC
-  epic-2: in-progress
+  epic-2: done
   2-1-generate-the-bundled-oui-database-at-build-time: done
   2-2-load-the-dataset-and-resolve-the-vendor-with-longest-prefix-match: done
   2-3-show-the-vendor-and-the-unknown-vendor-no-match-state-in-the-result-banner: done
