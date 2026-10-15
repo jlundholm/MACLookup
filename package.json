@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "zip": "tsx scripts/package-extension.ts"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",

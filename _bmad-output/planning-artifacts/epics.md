@@ -499,7 +499,7 @@ If Jared decides to publish, OUI Scout can be submitted with a minimal-permissio
 
 > **OQ-1 resolved 2026-10-14** (Option A — IEEE's public listing carries no redistribution restriction; see `oq-1-ieee-redistribution-resolution.md`). The Story 3.2 licensing gate is therefore cleared; only the publish decision itself remains.
 
-> **Prerequisite (human, not a story):** publishing requires a registered Chrome Web Store developer account — one-time registration fee, Google account (developer.chrome.com/docs/webstore/register). This is Jared's task before Story 3.2's submission step; no story implements it.
+> **Prerequisite (human, not a story):** publishing requires a registered Chrome Web Store developer account — one-time registration fee, Google account (developer.chrome.com/docs/webstore/register). **RESOLVED 2026-10-14** — account created and the one-time fee paid.
 
 **FRs covered:** FR8
 

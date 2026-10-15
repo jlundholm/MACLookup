@@ -105,6 +105,25 @@ and MA-S CSVs from `standards-oui.ieee.org`, emits a name-only index, and
 overwrites `public/oui-data.json`. `npm run build` then copies it verbatim into
 `dist/`.
 
+## Packaging for the Chrome Web Store
+
+```bash
+npm run build && npm run zip
+```
+
+This validates the production `dist/` (zero-permission manifest, store
+checklist, dataset byte-equality with `public/`) and writes
+`release/oui-scout-<version>.zip` with `manifest.json` at the archive root.
+A dev-mode `dist/` (CRXJS adds a service worker) is refused — always `build`
+first. Confirm the layout with:
+
+```bash
+unzip -l release/oui-scout-<version>.zip   # manifest.json must be at the root
+```
+
+The zip is the exact artifact to upload in the developer dashboard; test it by
+extracting and loading it unpacked, not just the `dist/` folder.
+
 ---
 
 ## Project scripts
@@ -118,6 +137,7 @@ overwrites `public/oui-data.json`. `npm run build` then copies it verbatim into
 | `npm run test` | Run the full Vitest suite once |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run preview` | Preview the built output |
+| `npm run zip` | Package `dist/` into `release/oui-scout-<version>.zip` for store upload |
 
 ## Testing and quality gates
 
@@ -155,7 +175,7 @@ tests/                     Privacy guard + build-script tests
 
 ## Versioning
 
-- Bump the extension version in **`manifest.json`** only (currently `0.0.9`).
+- Bump the extension version in **`manifest.json`** only (currently `0.0.10`).
   The **rightmost** segment increments once per story/release (`0.0.9` →
   `0.0.10`) — start low, leave room to grow, per the Chrome Web Store "prepare"
   guidance. (Earlier history used the middle segment — `0.1.0` … `0.9.0` —
