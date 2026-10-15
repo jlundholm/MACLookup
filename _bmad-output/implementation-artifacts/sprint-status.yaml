@@ -74,6 +74,6 @@ development_status:
   # Epic 3: Ship it to the Chrome Web Store (CONDITIONAL — publish-only)
   epic-3: in-progress
   3-1-package-the-built-extension-for-store-submission: review
-  3-2-publish-a-store-listing-and-privacy-policy-with-a-no-data-collection-disclosure: ready-for-dev
+  3-2-publish-a-store-listing-and-privacy-policy-with-a-no-data-collection-disclosure: in-progress
   3-3-verify-the-no-collection-posture-on-the-final-build: backlog
   epic-3-retrospective: optional

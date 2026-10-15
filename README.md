@@ -124,6 +124,8 @@ unzip -l release/oui-scout-<version>.zip   # manifest.json must be at the root
 The zip is the exact artifact to upload in the developer dashboard; test it by
 extracting and loading it unpacked, not just the `dist/` folder.
 
+Store listing copy and the privacy policy live in [`store/`](store/).
+
 ---
 
 ## Project scripts
