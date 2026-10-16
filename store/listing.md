@@ -11,7 +11,7 @@ verbatim. Dashboard field limits: title ~45 chars, summary ≤ 132 chars.
 OUI Scout — MAC Vendor Lookup
 ```
 
-### Summary (127 chars)
+### Summary (132 chars)
 
 ```
 Convert any MAC address to Colon, Plain, and Cisco-dot formats and look up its vendor — offline. No permissions, no data collection.
@@ -64,7 +64,7 @@ At least one 1280×800 screenshot is required (up to 5 allowed). Capture steps:
 3. Open the popup and paste `f0:18:98:00:00:00` — the banner shows **Found / Apple, Inc.** and all three format rows fill.
 4. Capture the popup window in light mode. Switch the OS to dark mode (the popup follows live) and capture again.
 5. Center each capture on a neutral flat canvas at **1280×800 px** — light-gray field for the light shot, dark-gray for the dark shot. No fake browser chrome, no marketing text, no callout arrows.
-6. Save as `store/screenshots/light-1280x800.png` and `store/screenshots/dark-1280x800.png` and commit both.
+6. Save each capture as `store/screenshots/<theme>-1280x800_<state>.png` and commit them — the committed set is `light-1280x800_valid.png`, `dark-1280x800_valid.png`, `light-1280x800_unknown.png`, and `dark-1280x800_invalid.png`.
 
 Optional assets skipped (not required): 440×280 small promo tile, 1400×560 marquee tile, YouTube video.
 
@@ -80,7 +80,7 @@ Optional assets skipped (not required): 440×280 small promo tile, 1400×560 mar
 | Detailed description | block above |
 | Category | Tools |
 | Language | English |
-| Screenshots | `store/screenshots/light-1280x800.png`, `store/screenshots/dark-1280x800.png` |
+| Screenshots | `store/screenshots/light-1280x800_valid.png`, `store/screenshots/dark-1280x800_valid.png`, `store/screenshots/light-1280x800_unknown.png`, `store/screenshots/dark-1280x800_invalid.png` |
 
 ### 2. Privacy practices tab
 

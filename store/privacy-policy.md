@@ -4,9 +4,11 @@
      dashboard privacy-policy field (Jared: publish this file, e.g. via a public
      GitHub repo or gist, and paste that URL). -->
 
-**OUI Scout converts pasted MAC addresses into Colon, Plain, and Cisco-dot
-formats and identifies the hardware vendor from a bundled IEEE OUI database —
-entirely offline. That is the extension's only purpose.**
+**Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and
+identifies the hardware vendor from a bundled IEEE OUI database — entirely
+offline, with no network access and no data collection.**
+
+That is OUI Scout's only purpose.
 
 ## Summary
 
@@ -34,10 +36,11 @@ source repository, not just promised here.
 
 ## Data source attribution
 
-Vendor names are derived from the IEEE Registration Authority public OUI
-listing, bundled into the extension at build time. The build-time download of
-that public listing is performed by the developer on the developer's own
-machine; it is not part of the shipped extension and involves no user data.
+OUI data from the IEEE Registration Authority public listing. Vendor names are
+derived from that listing, bundled into the extension at build time. The
+build-time download of the public listing is performed by the developer on the
+developer's own machine; it is not part of the shipped extension and involves
+no user data.
 
 ## Changes
 

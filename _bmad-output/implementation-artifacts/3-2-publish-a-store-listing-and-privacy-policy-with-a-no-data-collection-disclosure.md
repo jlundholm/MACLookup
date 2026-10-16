@@ -4,7 +4,7 @@ baseline_commit: 6c31add4b7e75854262a5ed85274bd9b8a53d1c8
 
 # Story 3.2: Publish a store listing and privacy policy with a "no data collection" disclosure
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -57,7 +57,7 @@ so that publication meets Chrome Web Store requirements without weakening the pr
 - [x] Task 3: Capture listing screenshots from the built `dist/` — `store/screenshots/` (AC: 3)
   - [x] Run `npm run build` and load `dist/` unpacked (never `npm run dev` — CRXJS dev augments `dist/` with a service worker; README verification caveat). Verify the loaded extension is version `0.0.10` from the production manifest.
   - [x] Capture **two** screenshots of the shipped popup in the **found** state with a real MAC pasted (`f0:18:98:00:00:00` → Apple, Inc. — the pinned fixture): one light, one dark (toggle the OS preference; the popup follows live, FR7). The popup must show the populated result banner + three filled format rows — the store's first impression is the product working, not an empty field.
-  - [x] Compose each capture onto a neutral canvas at **1280×800 px** (the CWS screenshot size; the popup itself is only 360 px wide — a bare 360-px image is technically rejected-adjacent and looks broken). Center the popup on a flat light-gray field for the light shot and a flat dark-gray field for the dark shot; no fake browser chrome, no added marketing text, no arrows callouts, no effects. Save as `store/screenshots/light-1280x800.png` and `store/screenshots/dark-1280x800.png`.
+  - [x] Compose each capture onto a neutral canvas at **1280×800 px** (the CWS screenshot size; the popup itself is only 360 px wide — a bare 360-px image is technically rejected-adjacent and looks broken). Center the popup on a flat light-gray field for the light shot and a flat dark-gray field for the dark shot; no fake browser chrome, no added marketing text, no arrows callouts, no effects. Save as `store/screenshots/<theme>-1280x800_<state>.png` (committed: `light-1280x800_valid.png`, `dark-1280x800_valid.png`, `light-1280x800_unknown.png`, `dark-1280x800_invalid.png`).
   - [x] If a compositing tool is unavailable on the machine, capture the raw popup windows, save them uncropped, and record in Completion Notes exactly what Jared must composite — do not fake, upscale, or ship a misleading image (listing-accuracy policy; AC3).
   - [x] Do **not** add promo tiles (440×280 / 1400×560) or a YouTube link — optional in the dashboard; out of scope here.
 - [x] Task 4: Walk Jared through the developer-dashboard entry (human step — prepare, don't fake) (AC: 1, 3, 4)
@@ -74,7 +74,15 @@ so that publication meets Chrome Web Store requirements without weakening the pr
 
 ### Review Findings
 
-_(added by code-review)_
+- [x] [Review][Decision → resolved] Screenshot dimensions 1200×800 vs specified 1280×800 — **Jared's call: keep the 1280×800 naming/spec; he will commit the correct 1280×800 images** (the repo currently holds 1200×800 placeholders under the 1280×800 names). No agent action; resolves once the correct assets land. The remaining doc-reference sync is tracked as a patch below.
+- [x] [Review][Decision → resolved] README Status claims publication, which the story scoped out — **Jared's call: keep the "Published …" wording** (accurate). Resolved as a patch: record the spec-scope deviation in the story's Dev Agent Record rather than reverting the line.
+- [x] [Review][Patch] Screenshot references point at files that were never committed — `light-1280x800.png` / `dark-1280x800.png` do not exist; the committed files carry `_valid`/`_unknown`/`_invalid` suffixes [store/listing.md:67,83; story file Behavior–Contract table:112-113]
+- [x] [Review][Patch] Summary length label is wrong — `store/listing.md` labels the block "(127 chars)" but the string is 132 chars (programmatically verified; still within the CWS 132 limit) [store/listing.md:14]
+- [x] [Review][Patch] Privacy-policy single-purpose sentence is not the mandated verbatim wording — policy paraphrases and drops "…with no network access and no data collection"; Task 4 mandates the exact sentence be reused in the policy [store/privacy-policy.md:7-9]
+- [x] [Review][Patch] IEEE attribution line not carried into the policy as the mandated exact line — Task 1/AC8 requires the literal line "OUI data from the IEEE Registration Authority public listing."; the policy substitutes a paraphrase [store/privacy-policy.md:37-38]
+- [x] [Review][Patch] Stale sprint-status `# history` comment — omits 2-2, 2-3, 3-1, and 3-2 entries [sprint-status.yaml:48]
+
+_(8 additional candidate findings dismissed as noise: "zero permissions vs clipboard hedge" (manifest truly declares none), privacy-policy-URL placeholder (intentional per Task 2), missing policy effective-date/contact (spec says minimal, no contact theater), policy's reference to the source repo (statement is true, no public-access claim), markdown headings in description (spec calls the field markdown-ish), empty Review Findings placeholder (this workflow fills it), "unlisted-during-review is the CWS default" (unverifiable offline, low signal), and "unverifiable gates/252" (252 was accurate for the reviewed dev tree). The Blind layer ran without project access and several of its items cite non-existent artifacts.)
 
 ## Dev Notes
 
@@ -109,8 +117,10 @@ Epic 3's middle story is the only one where the deliverable is **words and image
 | Surface | Before (this story) | After |
 |---|---|---|
 | `store/` | does not exist | NEW — `listing.md`, `privacy-policy.md`, `screenshots/` |
-| `store/screenshots/light-1280x800.png` | — | NEW — found-state light capture, 1280×800 |
-| `store/screenshots/dark-1280x800.png` | — | NEW — found-state dark capture, 1280×800 |
+| `store/screenshots/light-1280x800_valid.png` | — | NEW — found-state light capture, 1280×800 |
+| `store/screenshots/dark-1280x800_valid.png` | — | NEW — found-state dark capture, 1280×800 |
+| `store/screenshots/light-1280x800_unknown.png` | — | NEW — miss-state light capture, 1280×800 |
+| `store/screenshots/dark-1280x800_invalid.png` | — | NEW — invalid-state dark capture, 1280×800 |
 | `manifest.json` version | `0.0.10` | unchanged (Critical Decision 1) |
 | `README.md` Status | "Not yet submitted…" | updated only after Jared actually submits |
 | `README.md` Packaging section | no pointer to `store/` | one-line pointer added |
@@ -162,7 +172,7 @@ Epic 3's middle story is the only one where the deliverable is **words and image
 ### Project Structure Notes
 
 - New directory: `store/` at the repo root — listing **source assets** only (`listing.md`, `privacy-policy.md`, `screenshots/*.png`). Not build output; committed; sibling to `public/`.
-- Naming: the directory is lowercase kebab-ish `store/` (matches repo conventions of lowercase dirs: `public/`, `scripts/`, `tests/`); markdown files lowercase kebab-case; screenshots `light-1280x800.png` / `dark-1280x800.png` (state + dimensions in the name — self-describing in a dashboard file picker).
+- Naming: the directory is lowercase kebab-ish `store/` (matches repo conventions of lowercase dirs: `public/`, `scripts/`, `tests/`); markdown files lowercase kebab-case; screenshots `<theme>-1280x800_<state>.png` (state + dimensions in the name — self-describing in a dashboard file picker).
 - No barrel/index files; no config; nothing to typecheck. The `store/` files are read by humans and pasted into a browser — they are not part of any build graph.
 - `store/` must NOT be added to `.gitignore` (opposite of `dist/` and `release/`).
 
@@ -201,6 +211,7 @@ opencode / mimo-v2.6-flash-free (dev-story execution)
 - **Deviation from the story's screenshot spec, recorded honestly:** captures are 1200×800 (planned 1280×800) and use `_valid`/`_unknown`/`_invalid` state suffixes instead of the bare theme names, four files instead of two. All are real captures of the built popup; none were scaled or fabricated. CWS accepted the submission as-is. The filenames in the repo are the source assets; the dashboard copies are whatever Jared uploaded.
 - **SM-5 progress:** "Approved on the Chrome Web Store with a 'no data collection' disclosure and no install-time permission warning" — approval and disclosure achieved; the no-install-time-warning half was verified in Story 3.1's manual AC3 on the same artifact. Story 3.3 remains for the network-trace verification on the final build.
 - **README Status** now reads "Published on the Chrome Web Store (version 0.0.10)." — discharged the line Story 3-1 deliberately left untouched.
+- **README wording deviation (recorded per code review, 2026-10-16):** the story's Out-of-Scope carve-out says the Status line records *submission, not approval* and suggested "Submitted …, pending review." Jared chose to keep the accurate "Published …" wording instead; `README.md:189` stands as written and the deviation from the suggested wording is noted here.
 
 ### File List
 
