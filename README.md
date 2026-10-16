@@ -186,4 +186,4 @@ tests/                     Privacy guard + build-script tests
 
 ## Status
 
-Private, unpublished v1. Not yet submitted to the Chrome Web Store.
+Published on the Chrome Web Store (version 0.0.10).

@@ -4,7 +4,7 @@ baseline_commit: 6c31add4b7e75854262a5ed85274bd9b8a53d1c8
 
 # Story 3.2: Publish a store listing and privacy policy with a "no data collection" disclosure
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -39,38 +39,38 @@ so that publication meets Chrome Web Store requirements without weakening the pr
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Draft the store listing copy — `store/listing.md` (AC: 1, 3)
-  - [ ] Create `store/listing.md` as the single source of truth for every dashboard text field. Structure it with one clearly-labeled section per field so Jared can copy-paste each block verbatim:
+- [x] Task 1: Draft the store listing copy — `store/listing.md` (AC: 1, 3)
+  - [x] Create `store/listing.md` as the single source of truth for every dashboard text field. Structure it with one clearly-labeled section per field so Jared can copy-paste each block verbatim:
     - **Title** (≤ 45 characters): `OUI Scout — MAC Vendor Lookup` (29 chars). Name stays "OUI Scout" — the manifest name; do not invent a second product name.
     - **Summary** (≤ 132 characters): one terse sentence carrying the two jobs (format conversion + offline vendor lookup) and the privacy edge. Must fit the same 132-char bound the packaging lint enforces on the manifest description (Story 3.1 Critical Decision 9) — the summary and manifest description should be consistent in claim, not necessarily byte-identical.
     - **Detailed description**: markdown-formatted copy adapted from `README.md` (Why it exists / Privacy posture / Features). Rules: no keyword spam (no irrelevant keyword lists, no repetition of the same keyword > 5 times — CWS Listing Requirements); no unattributed testimonials; no claims of Google affiliation, Editors' Choice, or rankings; no comparison naming a competitor's product disparagingly (README's "closest reference extension" sentence may be generalized to "other lookup tools send the MAC to a remote service" without naming anyone); no personality/emoji/exclamation (PRD §10 tone). Include: single purpose (MAC format conversion + offline OUI vendor lookup), the three output formats, longest-prefix MA-L/MA-M/MA-S lookup, fully offline / zero permissions / no data collection, light/dark + keyboard accessibility.
     - **Category**: Tools.
     - **Language**: English.
     - **Attribution line** (OQ-1 consequence, `oq-1-ieee-redistribution-resolution.md:64-66`): "OUI data from the IEEE Registration Authority public listing." Carry it into both the detailed description and the privacy policy.
-  - [ ] Cross-check every factual claim in the listing against the shipped behavior (README Features list is the verified inventory). Nothing may promise a feature the popup does not have (single-purpose + listing-accuracy policies).
-- [ ] Task 2: Draft the privacy policy — `store/privacy-policy.md` (AC: 1, 4)
-  - [ ] Create `store/privacy-policy.md`: short, plain-language, stating unambiguously that OUI Scout **collects no data** — no collection, no use, no sharing, no transmission; no network requests at runtime; no telemetry, analytics, or crash reporting; no cookies, storage, or accounts; the pasted MAC and results live only in the popup's memory and vanish when it closes; clipboard writes happen locally under a user gesture and nothing is sent anywhere.
-  - [ ] State the single purpose in the policy's first paragraph (MAC conversion + offline OUI vendor lookup) so it is consistent with the dashboard single-purpose statement (AC4) — CWS removes extensions whose privacy fields contradict the policy or the behavior.
-  - [ ] Include the IEEE attribution line from Task 1 (the dataset is bundled at build time; the only network activity in the project is the developer's own build-time fetch, which never ships and is not user data).
-  - [ ] End with a "Changes" note ("If this policy ever changes, the updated version will be published here") and no contact-form theater — a GitHub repo link is sufficient support for a free utility.
-  - [ ] Note in the file header (HTML comment or a short "Source" line) that this file is the source of truth and the public URL is filled in the dashboard by Jared.
-- [ ] Task 3: Capture listing screenshots from the built `dist/` — `store/screenshots/` (AC: 3)
-  - [ ] Run `npm run build` and load `dist/` unpacked (never `npm run dev` — CRXJS dev augments `dist/` with a service worker; README verification caveat). Verify the loaded extension is version `0.0.10` from the production manifest.
-  - [ ] Capture **two** screenshots of the shipped popup in the **found** state with a real MAC pasted (`f0:18:98:00:00:00` → Apple, Inc. — the pinned fixture): one light, one dark (toggle the OS preference; the popup follows live, FR7). The popup must show the populated result banner + three filled format rows — the store's first impression is the product working, not an empty field.
-  - [ ] Compose each capture onto a neutral canvas at **1280×800 px** (the CWS screenshot size; the popup itself is only 360 px wide — a bare 360-px image is technically rejected-adjacent and looks broken). Center the popup on a flat light-gray field for the light shot and a flat dark-gray field for the dark shot; no fake browser chrome, no added marketing text, no arrows callouts, no effects. Save as `store/screenshots/light-1280x800.png` and `store/screenshots/dark-1280x800.png`.
-  - [ ] If a compositing tool is unavailable on the machine, capture the raw popup windows, save them uncropped, and record in Completion Notes exactly what Jared must composite — do not fake, upscale, or ship a misleading image (listing-accuracy policy; AC3).
-  - [ ] Do **not** add promo tiles (440×280 / 1400×560) or a YouTube link — optional in the dashboard; out of scope here.
-- [ ] Task 4: Walk Jared through the developer-dashboard entry (human step — prepare, don't fake) (AC: 1, 3, 4)
-  - [ ] Produce a short dashboard checklist inside `store/listing.md` (a "Dashboard entry order" section) covering, in order: Store listing tab (icon — reuse `public/icons/icon-128.png`, already 128×128; title; summary; detailed description; category Tools; language English; both screenshots); Privacy practices tab (single-purpose statement — verbatim the sentence below; remote code **No**; data collection **No data collected** / none of the category checkboxes; privacy policy URL — the public URL of `store/privacy-policy.md`); Distribution tab (public visibility is Jared's call; unlisted-during-review is the default).
-  - [ ] The **single-purpose statement** (use this exact wording, also reused in Task 2's policy): "Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection."
-  - [ ] The remote-code answer is **No** and must never be marked Yes: the extension ships no remote code, no eval; the Story 1.8 guard suite enforces this and Story 3.3 re-verifies on the final build (AC4).
-  - [ ] Upload `release/oui-scout-0.0.10.zip` (the artifact Story 3.1 produced and Jared already load-tested). If the zip is missing, rebuild with `npm run build && npm run zip` and re-verify with `unzip -l` (manifest.json at archive root).
-- [ ] Task 5: Housekeeping and gates (AC: 1; all)
-  - [ ] `.gitignore`: ensure `store/screenshots/*.png` is **NOT** ignored — screenshots are committed listing source assets (like `public/icons/`), not build output. Conversely, do not un-ignore `dist/` or `release/`.
-  - [ ] `README.md`: update the **Status** section (currently "Private, unpublished v1. Not yet submitted to the Chrome Web Store.") to reflect reality after Jared submits — e.g., "Submitted to the Chrome Web Store (version 0.0.10), pending review." Only change this line once Jared has actually submitted; if the story halts before submission, leave it.
-  - [ ] `README.md`: add a one-line pointer under **Packaging for the Chrome Web Store** that listing copy and the privacy policy live in `store/`.
-  - [ ] Run the gates: `npm run typecheck`, `npm test`, `npm run build` — all must stay green. This story changes **zero** runtime code; any diff under `src/` is a defect (same reviewable claim as Story 3.1).
-  - [ ] **No manifest version bump** (see Critical Decision 1): `manifest.json` stays `0.0.10`; the uploaded zip stays `oui-scout-0.0.10.zip`.
+  - [x] Cross-check every factual claim in the listing against the shipped behavior (README Features list is the verified inventory). Nothing may promise a feature the popup does not have (single-purpose + listing-accuracy policies).
+- [x] Task 2: Draft the privacy policy — `store/privacy-policy.md` (AC: 1, 4)
+  - [x] Create `store/privacy-policy.md`: short, plain-language, stating unambiguously that OUI Scout **collects no data** — no collection, no use, no sharing, no transmission; no network requests at runtime; no telemetry, analytics, or crash reporting; no cookies, storage, or accounts; the pasted MAC and results live only in the popup's memory and vanish when it closes; clipboard writes happen locally under a user gesture and nothing is sent anywhere.
+  - [x] State the single purpose in the policy's first paragraph (MAC conversion + offline OUI vendor lookup) so it is consistent with the dashboard single-purpose statement (AC4) — CWS removes extensions whose privacy fields contradict the policy or the behavior.
+  - [x] Include the IEEE attribution line from Task 1 (the dataset is bundled at build time; the only network activity in the project is the developer's own build-time fetch, which never ships and is not user data).
+  - [x] End with a "Changes" note ("If this policy ever changes, the updated version will be published here") and no contact-form theater — a GitHub repo link is sufficient support for a free utility.
+  - [x] Note in the file header (HTML comment or a short "Source" line) that this file is the source of truth and the public URL is filled in the dashboard by Jared.
+- [x] Task 3: Capture listing screenshots from the built `dist/` — `store/screenshots/` (AC: 3)
+  - [x] Run `npm run build` and load `dist/` unpacked (never `npm run dev` — CRXJS dev augments `dist/` with a service worker; README verification caveat). Verify the loaded extension is version `0.0.10` from the production manifest.
+  - [x] Capture **two** screenshots of the shipped popup in the **found** state with a real MAC pasted (`f0:18:98:00:00:00` → Apple, Inc. — the pinned fixture): one light, one dark (toggle the OS preference; the popup follows live, FR7). The popup must show the populated result banner + three filled format rows — the store's first impression is the product working, not an empty field.
+  - [x] Compose each capture onto a neutral canvas at **1280×800 px** (the CWS screenshot size; the popup itself is only 360 px wide — a bare 360-px image is technically rejected-adjacent and looks broken). Center the popup on a flat light-gray field for the light shot and a flat dark-gray field for the dark shot; no fake browser chrome, no added marketing text, no arrows callouts, no effects. Save as `store/screenshots/light-1280x800.png` and `store/screenshots/dark-1280x800.png`.
+  - [x] If a compositing tool is unavailable on the machine, capture the raw popup windows, save them uncropped, and record in Completion Notes exactly what Jared must composite — do not fake, upscale, or ship a misleading image (listing-accuracy policy; AC3).
+  - [x] Do **not** add promo tiles (440×280 / 1400×560) or a YouTube link — optional in the dashboard; out of scope here.
+- [x] Task 4: Walk Jared through the developer-dashboard entry (human step — prepare, don't fake) (AC: 1, 3, 4)
+  - [x] Produce a short dashboard checklist inside `store/listing.md` (a "Dashboard entry order" section) covering, in order: Store listing tab (icon — reuse `public/icons/icon-128.png`, already 128×128; title; summary; detailed description; category Tools; language English; both screenshots); Privacy practices tab (single-purpose statement — verbatim the sentence below; remote code **No**; data collection **No data collected** / none of the category checkboxes; privacy policy URL — the public URL of `store/privacy-policy.md`); Distribution tab (public visibility is Jared's call; unlisted-during-review is the default).
+  - [x] The **single-purpose statement** (use this exact wording, also reused in Task 2's policy): "Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection."
+  - [x] The remote-code answer is **No** and must never be marked Yes: the extension ships no remote code, no eval; the Story 1.8 guard suite enforces this and Story 3.3 re-verifies on the final build (AC4).
+  - [x] Upload `release/oui-scout-0.0.10.zip` (the artifact Story 3.1 produced and Jared already load-tested). If the zip is missing, rebuild with `npm run build && npm run zip` and re-verify with `unzip -l` (manifest.json at archive root).
+- [x] Task 5: Housekeeping and gates (AC: 1; all)
+  - [x] `.gitignore`: ensure `store/screenshots/*.png` is **NOT** ignored — screenshots are committed listing source assets (like `public/icons/`), not build output. Conversely, do not un-ignore `dist/` or `release/`.
+  - [x] `README.md`: update the **Status** section (currently "Private, unpublished v1. Not yet submitted to the Chrome Web Store.") to reflect reality after Jared submits — e.g., "Submitted to the Chrome Web Store (version 0.0.10), pending review." Only change this line once Jared has actually submitted; if the story halts before submission, leave it.
+  - [x] `README.md`: add a one-line pointer under **Packaging for the Chrome Web Store** that listing copy and the privacy policy live in `store/`.
+  - [x] Run the gates: `npm run typecheck`, `npm test`, `npm run build` — all must stay green. This story changes **zero** runtime code; any diff under `src/` is a defect (same reviewable claim as Story 3.1).
+  - [x] **No manifest version bump** (see Critical Decision 1): `manifest.json` stays `0.0.10`; the uploaded zip stays `oui-scout-0.0.10.zip`.
 
 ### Review Findings
 
@@ -184,10 +184,36 @@ Epic 3's middle story is the only one where the deliverable is **words and image
 
 ### Agent Model Used
 
-opencode / mimo-v2.6-flash-free (create-story execution)
+opencode / mimo-v2.6-flash-free (dev-story execution)
 
 ### Debug Log References
 
+- **Task 1.** `store/listing.md` created: title `OUI Scout — MAC Vendor Lookup` (29 chars); summary measured programmatically at **exactly 132 chars** (at the CWS limit, within it); detailed description adapted from README Features/Privacy-posture with competitor reference generalized, no superlatives, IEEE attribution line included; Category Tools; Language English.
+- **Task 2.** `store/privacy-policy.md` created: single purpose in the first paragraph (consistent with the dashboard statement), no-data-collection claims only, IEEE attribution, Changes note, source-of-truth header comment.
+- **Task 3 (human — Jared).** Four screenshots captured from the built `dist/` (superset of the planned two): `light-1280x800_valid.png`, `dark-1280x800_valid.png`, `light-1280x800_unknown.png`, `dark-1280x800_invalid.png`. Found/miss/invalid states, both themes. Dimensions observed via `file(1)`: **1200×800** (not the planned 1280×800) — accepted by the CWS upload pipeline (the listing went live); not upscaled or faked. Filename typo `…_uknown.png` renamed by the agent to `…_unknown.png`.
+- **Task 4 (human — Jared).** Dashboard entry completed per `store/listing.md` "Dashboard entry order": listing tab, privacy tab (single-purpose verbatim, remote code No, no data collected, policy URL), `release/oui-scout-0.0.10.zip` uploaded. **Submission reviewed and approved — version 0.0.10 is live and public on the Chrome Web Store** (reported by Jared, 2026-10-15).
+- **Task 5.** `.gitignore` verified: no rule matches `store/` or `*.png` (screenshots commit cleanly); `dist/`/`release/` remain ignored. README: Packaging section gained the `store/` pointer; Status line updated to "Published on the Chrome Web Store (version 0.0.10)." Gates run after all agent-side edits: `npm run typecheck` 0 errors; `npm test` **252 passed / 9 files**; `npm run build` OK. No manifest bump (Critical Decision 1) — `0.0.10` unchanged, zip unchanged.
+
 ### Completion Notes List
 
+- **Zero runtime changes.** `git status` shows only: `store/` (new: `listing.md`, `privacy-policy.md`, `screenshots/*.png` ×4), `README.md`, and the tracking docs (`sprint-status.yaml`, this story file). Nothing under `src/`, `public/oui-data.json`, `scripts/`, `tests/`, or `manifest.json` — the reviewable claim from Story 3.1 holds again. The 252-test suite (incl. the privacy guard) ran untouched.
+- **AC1 satisfied:** listing and policy both state no data collection; the listing accurately reflects the single purpose (MAC conversion + offline OUI vendor lookup), offline behavior, zero permissions. **AC2 satisfied by inspection:** shipped manifest (0.0.10) declares no permissions/host_permissions — asserted continuously by `tests/privacy.guard.test.ts`. **AC3 satisfied:** screenshots are captures of the shipped popup (valid/miss/invalid, light+dark), no misleading imagery; the live listing proves CWS acceptance. **AC4 satisfied:** dashboard privacy fields completed with single-purpose statement, remote code No, no data collected, consistent policy. **AC5 satisfied:** OQ-1 resolved on record 2026-10-14 (Option A) before submission; IEEE attribution line carried into both description and policy.
+- **Deviation from the story's screenshot spec, recorded honestly:** captures are 1200×800 (planned 1280×800) and use `_valid`/`_unknown`/`_invalid` state suffixes instead of the bare theme names, four files instead of two. All are real captures of the built popup; none were scaled or fabricated. CWS accepted the submission as-is. The filenames in the repo are the source assets; the dashboard copies are whatever Jared uploaded.
+- **SM-5 progress:** "Approved on the Chrome Web Store with a 'no data collection' disclosure and no install-time permission warning" — approval and disclosure achieved; the no-install-time-warning half was verified in Story 3.1's manual AC3 on the same artifact. Story 3.3 remains for the network-trace verification on the final build.
+- **README Status** now reads "Published on the Chrome Web Store (version 0.0.10)." — discharged the line Story 3-1 deliberately left untouched.
+
 ### File List
+
+- `store/listing.md` (NEW) — dashboard-ready listing copy + entry order + capture steps.
+- `store/privacy-policy.md` (NEW) — no-data-collection privacy policy with IEEE attribution.
+- `store/screenshots/light-1280x800_valid.png` (NEW) — light found-state capture, 1200×800 (Jared).
+- `store/screenshots/dark-1280x800_valid.png` (NEW) — dark found-state capture, 1200×800 (Jared).
+- `store/screenshots/light-1280x800_unknown.png` (NEW) — light miss-state capture, 1200×800 (Jared; renamed from `…_uknown.png`).
+- `store/screenshots/dark-1280x800_invalid.png` (NEW) — dark invalid-state capture, 1200×800 (Jared).
+- `README.md` — Packaging section `store/` pointer; Status line → published.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — 3-2 in-progress → review.
+- `_bmad-output/implementation-artifacts/3-2-publish-a-store-listing-and-privacy-policy-with-a-no-data-collection-disclosure.md` — this file.
+
+### Change Log
+
+- 2026-10-15: Implemented Story 3.2 against baseline `6c31add`. Agent produced `store/listing.md` + `store/privacy-policy.md`, README pointer, gates green (typecheck 0 errors, 252 tests, build OK). Jared captured four state/theme screenshots, completed the dashboard entry, and **published: version 0.0.10 is live and public on the Chrome Web Store after review**. No manifest bump; zero `src/` changes. Story moved to `review`.
