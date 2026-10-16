@@ -45,6 +45,10 @@
 > overhaul with real regression risk to 1.2/1.5's pixel-matched tokens; revisit
 > only if store review or a real user reports clipping.
 
+## Deferred from: code review of 3-1-package-the-built-extension-for-store-submission (2026-10-16)
+
+- **`optional_permissions` / `optional_host_permissions` escape the zero-grant check:** `packageViolations` (scripts/package-extension.ts:119-123) inspects only `permissions` and `host_permissions`, so an MV3 optional-grant key would ship while the script asserts the zero-permission posture. Intentional parity with the Story 1.8 guard (Critical Decision 5 mirrors the guard's invariants, which also omit these keys); revisit only if the guard's threat model changes.
+
 ## Deferred from: code review of story 2-3 (2026-10-11)
 
 - **Outcome styling commits to `miss` during the dataset load window:** a valid MAC pasted before `dataset-ready` derives `status: 'miss'` (Critical Decision 1), so `root.dataset.status` (src/ui/render.ts:50) paints the format-row rails and copy-button hover in the amber miss colour before the dataset has answered — only the banner is readiness-gated. Transient (≈ one-time load, measured 172.8 ms in 2.2) and inherited from 2.2's `'valid'`-keyed rails; no failing test. Revisit if the load ever becomes slow enough to be perceptible, or if a fourth "checking" status is ever wanted.

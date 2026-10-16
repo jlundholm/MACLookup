@@ -4,7 +4,7 @@ baseline_commit: 254c84f642d604eda7fc5a7e621b2943e54ea541
 
 # Story 3.1: Package the built extension for store submission
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -63,7 +63,7 @@ So that I can upload a consistent, versioned build to the Chrome Web Store.
     - update **Versioning** "currently `0.0.9`" → "`0.0.10`" (the rightmost-segment rule is already documented there from the 2026-10-14 scheme rebase — only the current number moves in this story);
     - add a short **Packaging for the Chrome Web Store** block: `npm run build && npm run zip`, then `unzip -l release/…` confirms `manifest.json` at the archive root.
   - [x] Leave README's **Status** section ("Not yet submitted") alone — still true until Story 3.2 publishes.
-- [ ] Task 5: Run the gates and package (AC: 1, 2, 3; all Critical Decisions)
+- [x] Task 5: Run the gates and package (AC: 1, 2, 3; all Critical Decisions)
   - [x] `npm run typecheck` → 0 errors; `npm test` → full suite green (229 tests at baseline, incl. the untouched privacy guard); `npm run build` → production build succeeds.
   - [x] `npm run zip` → prints the version block and exits 0.
   - [x] `unzip -l release/oui-scout-0.0.10.zip` → `manifest.json`, `index.html`, `oui-data.json`, `icons/*`, `assets/*` all at the archive root (no `dist/` prefix folder).
@@ -72,7 +72,18 @@ So that I can upload a consistent, versioned build to the Chrome Web Store.
 
 ### Review Findings
 
-_(added by code-review)_
+- [x] [Review][Patch] Falsy-but-valid JSON bypasses all manifest/dataset validation — `dist/manifest.json` containing `""`/`null` (valid JSON, falsy) skips every check via the `if (distManifest)` / `if (dataset)` guards, so zero violations are reported and `readVersions` yields `oui-scout-undefined.zip` (exit 0); a literal `null` instead crashes `readVersions` with an uncaught TypeError [scripts/package-extension.ts:36-43,86,143,182-185]
+- [x] [Review][Patch] Stale-artifact sweep runs before the zip spawn — `release/oui-scout-*.zip` is deleted (246-251) before `spawnSync` (254), so a run on a machine without the `zip` binary destroys the last known-good artifact and leaves `release/` empty [scripts/package-extension.ts:246-263]
+- [x] [Review][Patch] Read-failure message misattributes every failure to `dist/` and prescribes a non-fixing command — the single catch claims "dist/ is missing build output — run 'npm run build'" even when the failure is root `manifest.json` or `public/oui-data.json`, and `npm run build` cannot regenerate the dataset (that is `build:data`) [scripts/package-extension.ts:219-228]
+- [x] [Review][Patch] Over-budget archive is left in `release/` after refusal — the 3 MiB check exits 1 without deleting the just-written zip, leaving an unuploadable artifact where README calls `release/` the exact upload source (weakens Critical Decision 7) [scripts/package-extension.ts:269-276]
+- [x] [Review][Patch] `counts` and `entries` accept arrays — `typeof x === 'object'` is true for arrays, so `counts: []` / `entries: ["Apple"]` pass the schema check [scripts/package-extension.ts:150-159]
+- [x] [Review][Patch] `generatedAt` accepts non-ISO strings — `Date.parse` accepts RFC-2822 and loose forms (`"October 11, 2026"`, `"2026"`) despite the message promising an ISO-8601 rejection [scripts/package-extension.ts:147]
+- [x] [Review][Patch] Whitespace-only `description` passes the CWS lint — `name` is trimmed (105) but `description` only checks `length === 0`, so `"   "` passes [scripts/package-extension.ts:109-116]
+- [x] [Review][Patch] Negative `schemaVersion` accepted — `Number.isInteger(-1)` is true, so `schemaVersion: -1` passes [scripts/package-extension.ts:144]
+- [x] [Review][Patch] Stale-zip sweep throws uncaught `ERR_FS_EISDIR` if a directory matches `oui-scout-*.zip` — `rmSync` is non-recursive and unfiltered, crashing `main()` with a stack trace [scripts/package-extension.ts:247-251]
+- [x] [Review][Patch] Untested boundary branches — no test covers malformed root manifest, malformed `public/oui-data.json`, version boundaries (65535 / 5 segments / empty segment / empty string), `permissions: null` type confusion, whitespace-only name/description, array `counts`/`entries`, non-ISO `generatedAt`, negative `schemaVersion`, or the falsy-JSON bypass above [tests/package-extension.test.ts]
+- [x] [Review][Patch] Story-file tracking inaccuracies — Task 5 parent checkbox (line 66) left `[ ]` while Completion Notes/Change Log claim "All tasks complete"; File List and Completion Notes report sprint-status as `in-progress` when the diff sets it to `review`; the "git status confirms only…" enumeration omits the story file itself [3-1-package-the-built-extension-for-store-submission.md:66,199,212,217]
+- [x] [Review][Defer] `optional_permissions` / `optional_host_permissions` escape the zero-grant check — mirrors the Story 1.8 guard's scope by design (Critical Decision 5); revisit only if the guard's threat model changes [scripts/package-extension.ts:119-123] — deferred, pre-existing
 
 ## Dev Notes
 
@@ -196,7 +207,7 @@ opencode / mimo-v2.6-flash-free (dev-story execution, red-green-refactor per tas
 - `scripts/package-extension.ts` is the build-time packaging surface: pure `packageViolations` (privacy invariants mirroring the guard + CWS manifest lint: name, description ≤ 132, version format, referenced-files existence, dataset schema + byte-equality) and `readVersions` (AC2's two records); `main()` only reads files, prints, spawns `zip`, enforces the 3 MiB budget (629,579 B today).
 - Zip runs with **cwd = `dist/`** so `manifest.json` lands at the archive root; stale `release/oui-scout-*.zip` files are deleted first; `-X` drops extra attributes; missing `zip` binary → explicit prerequisite message.
 - A dev-mode `dist/` (CRXJS adds `background`) is **refused** with a rebuild hint — drill proven above.
-- **Zero `src/**` changes** (`git status` confirms only: `scripts/package-extension.ts` + `tests/package-extension.test.ts` new; `package.json`, `manifest.json`, `.gitignore`, `README.md`, `sprint-status.yaml`, `epics.md` modified — the latter two are tracking/planning docs: epic-3 developer-account prerequisite marked resolved, sprint status in-progress). The privacy guard ran untouched inside the 252-test suite.
+- **Zero `src/**` changes** (`git status` confirms only: `scripts/package-extension.ts` + `tests/package-extension.test.ts` new; `package.json`, `manifest.json`, `.gitignore`, `README.md`, plus the tracking/planning docs `sprint-status.yaml`, `epics.md`, and this story file itself — the tracking docs carry epic-3 developer-account prerequisite marked resolved and sprint status `review`). The privacy guard ran untouched inside the 252-test suite.
 - `epics.md` epic-3 note updated: Chrome Web Store developer account registered and one-time fee paid (2026-10-14) — the human prerequisite is cleared.
 - README: `zip` row in the scripts table, Versioning now `0.0.10`, new "Packaging for the Chrome Web Store" section (build → zip → `unzip -l` check; test the exact artifact). Status section untouched.
 - **All tasks complete.** Manual AC3 passed (Jared, 2026-10-14): no permission warning on load, popup opened, `f0:18:98:…` → Apple.
@@ -209,7 +220,7 @@ opencode / mimo-v2.6-flash-free (dev-story execution, red-green-refactor per tas
 - `manifest.json` — version `0.0.9` → `0.0.10`.
 - `.gitignore` — `+ release/`.
 - `README.md` — scripts-table `zip` row; Versioning `0.0.10`; new Packaging section.
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` — 3-1 `in-progress`.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — 3-1 `review`.
 - `_bmad-output/planning-artifacts/epics.md` — epic-3 developer-account prerequisite marked resolved.
 
 ### Change Log

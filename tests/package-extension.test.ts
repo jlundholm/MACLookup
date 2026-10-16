@@ -206,6 +206,87 @@ describe('packageViolations', () => {
     );
     expect(v.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('flags a malformed root manifest', () => {
+    const v = packageViolations(inputs({ rootManifestRaw: '{ nope' }));
+    expect(v.some((x) => x.includes('manifest.json (root)'))).toBe(true);
+  });
+
+  it('flags a malformed public dataset', () => {
+    const v = packageViolations(inputs({ publicDatasetRaw: '{ nope' }));
+    expect(v.some((x) => x.includes('public/oui-data.json'))).toBe(true);
+  });
+
+  it('flags a falsy-but-valid dist manifest instead of skipping validation', () => {
+    for (const raw of ['null', '""', 'false', '0', '[]']) {
+      const v = packageViolations(inputs({ distManifestRaw: raw }));
+      expect(v.some((x) => x.includes('dist/manifest.json'))).toBe(true);
+    }
+  });
+
+  it('flags a falsy-but-valid dist dataset instead of skipping validation', () => {
+    for (const raw of ['null', '""', 'false', '0', '[]']) {
+      const v = packageViolations(inputs({ datasetRaw: raw, publicDatasetRaw: raw }));
+      expect(v.some((x) => x.includes('dist/oui-data.json'))).toBe(true);
+    }
+  });
+
+  it('flags a 5-segment version', () => {
+    const v = packageViolations(inputs({ distManifestRaw: manifest({ version: '1.2.3.4.5' }) }));
+    expect(v.some((x) => x.includes('version'))).toBe(true);
+  });
+
+  it('flags an empty version segment', () => {
+    const v = packageViolations(inputs({ distManifestRaw: manifest({ version: '1..2' }) }));
+    expect(v.some((x) => x.includes('version'))).toBe(true);
+  });
+
+  it('flags an empty-string version', () => {
+    const v = packageViolations(inputs({ distManifestRaw: manifest({ version: '' }) }));
+    expect(v.some((x) => x.includes('version'))).toBe(true);
+  });
+
+  it('accepts a version segment of exactly 65535', () => {
+    const v = packageViolations(
+      inputs({
+        rootManifestRaw: manifest({ version: '0.0.65535' }),
+        distManifestRaw: manifest({ version: '0.0.65535' }),
+      }),
+    );
+    expect(v).toEqual([]);
+  });
+
+  it('flags a null permissions value', () => {
+    const v = packageViolations(inputs({ distManifestRaw: manifest({ permissions: null }) }));
+    expect(v.some((x) => x.includes('permissions'))).toBe(true);
+  });
+
+  it('flags a whitespace-only name and description', () => {
+    const v = packageViolations(
+      inputs({ distManifestRaw: manifest({ name: '   ', description: '   ' }) }),
+    );
+    expect(v.some((x) => x.includes('name'))).toBe(true);
+    expect(v.some((x) => x.includes('description'))).toBe(true);
+  });
+
+  it('flags array counts and array entries', () => {
+    const broken = dataset({ counts: [], entries: ['Apple'] });
+    const v = packageViolations(inputs({ datasetRaw: broken, publicDatasetRaw: broken }));
+    expect(v.some((x) => x.includes('counts'))).toBe(true);
+    expect(v.some((x) => x.includes('entries'))).toBe(true);
+  });
+
+  it('flags a non-ISO-8601 generatedAt', () => {
+    const broken = dataset({ generatedAt: 'October 11, 2026' });
+    const v = packageViolations(inputs({ datasetRaw: broken, publicDatasetRaw: broken }));
+    expect(v.some((x) => x.includes('generatedAt'))).toBe(true);
+  });
+
+  it('flags a negative schemaVersion', () => {
+    const broken = dataset({ schemaVersion: -1 });
+    const v = packageViolations(inputs({ datasetRaw: broken, publicDatasetRaw: broken }));
+    expect(v.some((x) => x.includes('schemaVersion'))).toBe(true);
+  });
 });
 
 describe('readVersions', () => {

@@ -35,7 +35,12 @@ type ManifestLike = Record<string, unknown>;
 
 function parseJson(raw: string, label: string, violations: string[]): ManifestLike | null {
   try {
-    return JSON.parse(raw) as ManifestLike;
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      violations.push(`${label} must be a JSON object (got ${JSON.stringify(parsed)})`);
+      return null;
+    }
+    return parsed as ManifestLike;
   } catch {
     violations.push(`${label} is not valid JSON (CWS rejects manifests with comments or syntax errors)`);
     return null;
@@ -107,7 +112,7 @@ export function packageViolations(inputs: PackageInputs): string[] {
     }
 
     const description = distManifest.description;
-    if (typeof description !== 'string' || description.length === 0) {
+    if (typeof description !== 'string' || description.trim().length === 0) {
       violations.push('dist/manifest.json description is missing');
     } else if (description.length > DESCRIPTION_MAX_LENGTH) {
       violations.push(
@@ -141,18 +146,27 @@ export function packageViolations(inputs: PackageInputs): string[] {
   parseJson(inputs.publicDatasetRaw, 'public/oui-data.json', violations);
 
   if (dataset) {
-    if (typeof dataset.schemaVersion !== 'number' || !Number.isInteger(dataset.schemaVersion)) {
-      violations.push(`dist/oui-data.json schemaVersion must be an integer (got ${JSON.stringify(dataset.schemaVersion)})`);
+    if (
+      typeof dataset.schemaVersion !== 'number' ||
+      !Number.isInteger(dataset.schemaVersion) ||
+      dataset.schemaVersion < 0
+    ) {
+      violations.push(`dist/oui-data.json schemaVersion must be a non-negative integer (got ${JSON.stringify(dataset.schemaVersion)})`);
     }
-    if (typeof dataset.generatedAt !== 'string' || Number.isNaN(Date.parse(dataset.generatedAt))) {
+    if (
+      typeof dataset.generatedAt !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(dataset.generatedAt) ||
+      Number.isNaN(Date.parse(dataset.generatedAt))
+    ) {
       violations.push(`dist/oui-data.json generatedAt must be an ISO-8601 timestamp (got ${JSON.stringify(dataset.generatedAt)})`);
     }
-    if (!dataset.counts || typeof dataset.counts !== 'object') {
+    if (!dataset.counts || typeof dataset.counts !== 'object' || Array.isArray(dataset.counts)) {
       violations.push('dist/oui-data.json counts is missing');
     }
     if (
       !dataset.entries ||
       typeof dataset.entries !== 'object' ||
+      Array.isArray(dataset.entries) ||
       Object.keys(dataset.entries as object).length === 0
     ) {
       violations.push('dist/oui-data.json entries is missing or empty');
@@ -218,9 +232,29 @@ function main(): void {
   let distFiles: string[];
   try {
     rootManifestRaw = readFileSync(rootManifestPath, 'utf8');
+  } catch {
+    console.error('manifest.json is missing at the project root — restore it from git.');
+    process.exit(1);
+  }
+  try {
     distManifestRaw = readFileSync(join(distDir, 'manifest.json'), 'utf8');
+  } catch {
+    console.error('dist/manifest.json is missing — run \'npm run build\' first.');
+    process.exit(1);
+  }
+  try {
     datasetRaw = readFileSync(join(distDir, 'oui-data.json'), 'utf8');
+  } catch {
+    console.error('dist/oui-data.json is missing — run \'npm run build\' first.');
+    process.exit(1);
+  }
+  try {
     publicDatasetRaw = readFileSync(resolve(root, 'public', 'oui-data.json'), 'utf8');
+  } catch {
+    console.error('public/oui-data.json is missing — run \'npm run build:data\' first.');
+    process.exit(1);
+  }
+  try {
     distFiles = collectFiles(distDir);
   } catch {
     console.error('dist/ is missing build output — run \'npm run build\' first.');
@@ -244,11 +278,6 @@ function main(): void {
   const outPath = join(releaseDir, `oui-scout-${versions.extension}.zip`);
 
   mkdirSync(releaseDir, { recursive: true });
-  for (const stale of readdirSync(releaseDir)) {
-    if (stale.startsWith('oui-scout-') && stale.endsWith('.zip')) {
-      rmSync(join(releaseDir, stale));
-    }
-  }
 
   // cwd = dist/ so manifest.json lands at the ARCHIVE ROOT (CWS requirement).
   const zip = spawnSync('zip', ['-r', '-X', outPath, '.', '-x', '*.DS_Store'], {
@@ -266,12 +295,23 @@ function main(): void {
     process.exit(zip.status ?? 1);
   }
 
+  // Sweep stale artifacts only after a successful zip, and never the new one
+  // (a failed run must not destroy the last known-good artifact).
+  for (const stale of readdirSync(releaseDir)) {
+    if (!stale.startsWith('oui-scout-') || !stale.endsWith('.zip')) continue;
+    const stalePath = join(releaseDir, stale);
+    if (stalePath === outPath) continue;
+    if (!statSync(stalePath).isFile()) continue;
+    rmSync(stalePath, { force: true });
+  }
+
   const archiveBytes = statSync(outPath).size;
   const distBytes = distFiles.reduce((sum, file) => sum + statSync(join(distDir, file)).size, 0);
   if (archiveBytes > MAX_PACKAGE_BYTES) {
     console.error(
-      `✗ archive is ${archiveBytes} bytes — exceeds the ${MAX_PACKAGE_BYTES}-byte (3 MiB) NFR5 package budget`,
+      `✗ archive is ${archiveBytes} bytes — exceeds the ${MAX_PACKAGE_BYTES}-byte (3 MiB) NFR5 package budget; deleted ${outPath}`,
     );
+    rmSync(outPath, { force: true });
     process.exit(1);
   }
 
