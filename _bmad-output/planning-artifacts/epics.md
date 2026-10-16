@@ -35,6 +35,8 @@ FR7: Follow the light/dark preference automatically — the popup renders light 
 
 FR8: Publish with a minimal-permission, no-collection posture (conditional on publish decision) — the manifest declares no host permissions and no runtime permission beyond what a user-gesture clipboard write requires; a store listing and privacy policy stating "no data collection" are present; a network trace during a full lookup and copy shows zero outbound requests.
 
+FR9: Display the Hyphen output format — for a valid MAC the popup shows four working formats at once — Plain (`AABBCCDDEEFF`), Colon (`AA:BB:CC:DD:EE:FF`), Cisco-dot (`AABB.CCDD.EEFF`), and Hyphen (`AA-BB-CC-DD-EE-FF`) — in that fixed order, all uppercase, each with its own one-click copy and confirmation/failure behavior identical to the existing rows. This also **reorders** the v1 three (which rendered Colon, Plain, Cisco-dot) so Plain leads and Hyphen trails. Input parsing is unchanged (the hyphen form was already accepted by FR1). This **supersedes** the v1 scope line "Hyphen/Windows as an output format — explicitly excluded by the user" (PRD §6.2); the reversal was authorized by Jared 2026-10-16 because Zoom Phone displays MAC addresses in hyphen form.
+
 ### NonFunctional Requirements
 
 NFR1 (Performance): Parse + three conversions + Vendor lookup complete in < 100 ms; popup first paint feels instant.
@@ -112,6 +114,7 @@ FR5: Epic 2 - Resolve Vendor offline from the OUI prefix
 FR6: Epic 2 - Show a clear no-match state
 FR7: Epic 1 - Follow the light/dark preference automatically
 FR8: Epic 3 - Publish with a minimal-permission, no-collection posture (conditional)
+FR9: Epic 4 - Display the Hyphen output format (supersedes the v1 hyphen exclusion)
 
 ## Epic List
 
@@ -132,6 +135,12 @@ Building on the popup, Jared sees the hardware Vendor for a pasted MAC, resolved
 If Jared decides to publish, OUI Scout can be submitted with a minimal-permission, no-collection posture: a store listing and privacy policy stating "no data collection," a packaged zip, and the privacy guard suite passing against the final build. Conditional on the publish decision (and resolving OQ-1).
 
 **FRs covered:** FR8
+
+### Epic 4: Match the hyphen shape Zoom Phone and Windows tools display
+
+Jared's v1 scope deliberately excluded a hyphen output format (PRD §6.2). Zoom Phone — and common Windows tooling — displays MAC addresses hyphen-separated, so the popup now shows and one-click-copies the Hyphen form alongside Colon, Plain, and Cisco-dot. Purely additive: same offline, zero-permission, per-row copy machinery, no parser or lookup changes.
+
+**FRs covered:** FR9
 
 ## Epic 1: Convert a MAC into every format you need — offline and native
 
@@ -575,3 +584,64 @@ So that I can publish with confidence in the no-collection claim.
 **Given** the shipped extension,
 **When** its behavior is reviewed,
 **Then** no telemetry, analytics, or crash reporting is present (PRD §5 Non-Goals, NFR2).
+
+## Epic 4: Match the hyphen shape Zoom Phone and Windows tools display
+
+Jared's v1 scope deliberately excluded a hyphen output format (PRD §6.2, brief decision log item 2: "Windows/hyphen output explicitly excluded by the user"). Zoom Phone — and common Windows tooling — displays MAC addresses hyphen-separated, so the popup now shows and one-click-copies the Hyphen form alongside Colon, Plain, and Cisco-dot. Purely additive: same offline, zero-permission, per-row copy machinery; no parser, dataset, lookup, or manifest-permission changes.
+
+**FRs covered:** FR9
+
+> **Scope reversal record (2026-10-16):** the hyphen exclusion is superseded by FR9 at Jared's request. This epic is the source of truth; PRD §6.2 carries a supersession note. The v1 UX artifacts (`ux-designs/…/DESIGN.md`, `EXPERIENCE.md`) still describe "three fixed rows" — Epic 4 supersedes that clause; do not edit the historical UX files.
+
+### Story 4.1: Add the Hyphen format with one-click copy
+
+As Jared,
+I want the Hyphen format shown and copyable alongside Colon, Plain, and Cisco-dot,
+So that I can paste the exact shape Zoom Phone displays without reformatting by hand.
+
+**Acceptance Criteria:**
+
+**Given** the Canonical value `AABBCCDDEEFF`,
+**When** a valid MAC is parsed,
+**Then** the popup shows four formats — `AABBCCDDEEFF`, `AA:BB:CC:DD:EE:FF`, `AABB.CCDD.EEFF`, `AA-BB-CC-DD-EE-FF` — all uppercase (FR9).
+
+**Given** the format rows,
+**When** they render,
+**Then** there are exactly four fixed rows in the order Plain, Colon, Cisco-dot, Hyphen, always all four,
+**And** each value is selectable text (FR9, UX-DR6 as amended by Epic 4).
+
+**Given** the Hyphen row,
+**When** it renders,
+**Then** it uses the same format-row anatomy as the others — field background, 1px border, `rounded.md`, 4px left status rail, field-label "Hyphen" over the readout value, empty value in text-muted (UX-DR6).
+
+**Given** a valid MAC with rendered format rows,
+**When** I activate the Hyphen row's copy control,
+**Then** exactly `AA-BB-CC-DD-EE-FF` is placed on the clipboard,
+**And** the confirmation (~1.5 s "Copied"), per-row independence, and clipboard-rejected failure state behave identically to the existing rows (FR4/FR9).
+
+**Given** invalid input,
+**When** the Hyphen row renders,
+**Then** it is inert — em-dash value, disabled copy — like every other row (FR2).
+
+**Given** the popup,
+**When** I press `Tab` / `Shift+Tab`,
+**Then** focus moves in reading order input → Plain copy → Colon copy → Cisco-dot copy → Hyphen copy,
+**And** each focused control keeps the visible neutral focus ring (UX-DR10 as amended by Epic 4).
+
+**Given** the formatter,
+**When** I inspect `src/lib/format.ts`,
+**Then** `formats(canonical)` is still a pure function and now returns `{ plain, colon, cisco, hyphen }`,
+**And** a co-located `format.test.ts` covers all four outputs including edge cases (`000000000000`, `FFFFFFFFFFFF`).
+
+**Given** the copy state machine,
+**When** a Hyphen copy resolves or times out,
+**Then** it is tracked independently per row — `CopyState` carries a `hyphen` flag alongside colon/plain/cisco.
+
+**Given** the parser, dataset, lookup, and manifest,
+**When** this story is complete,
+**Then** none of their behavior changes — hyphen input was already accepted (FR1), zero permissions remain, the privacy guard suite stays green (NFR2).
+
+**Given** the gates,
+**When** I run `npm run typecheck`, `npm test`, and `npm run build`,
+**Then** all three pass,
+**And** `manifest.json` `version` is bumped on the rightmost segment per project-context.md.

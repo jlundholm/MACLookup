@@ -193,7 +193,7 @@ Feature-level deferrals — extra formats, other browsers, a manual theme toggle
 
 ### 6.2 Out of Scope for MVP
 
-- Hyphen/Windows as an output format — explicitly excluded by the user.
+- ~~Hyphen/Windows as an output format — explicitly excluded by the user.~~ **Superseded 2026-10-16:** the hyphen output format is in scope as FR9 / Epic 4 (Zoom Phone displays MACs hyphen-separated; the user authorized the reversal).
 - EUI-64, decimal, and binary formats — deferred to v2 [ASSUMPTION].
 - Firefox/Edge ports — deferred [ASSUMPTION].
 - Manual theme toggle — deferred [ASSUMPTION].
