@@ -1,8 +1,8 @@
 # OUI Scout
 
-A Chrome extension (Manifest V3) that turns a pasted MAC address into the three
-formats network engineers actually use — **colon**, **plain**, and **Cisco-dot** —
-and identifies the hardware **vendor** from its OUI prefix.
+A Chrome extension (Manifest V3) that turns a pasted MAC address into the four
+formats network engineers actually use — **plain**, **colon**, **Cisco-dot**, and
+**hyphen** — and identifies the hardware **vendor** from its OUI prefix.
 
 Conversion and lookup happen in a single paste, **fully offline**. The OUI
 database is bundled inside the extension, so there are no network requests, no
@@ -33,10 +33,11 @@ promised:
 
 - Paste any common MAC shape — colon, dotted, plain, mixed case, with or without
   separators — and it is normalized to a canonical 12-hex-digit uppercase value.
-- Three output formats, each with one-click copy and a "Copied" confirmation:
-  - Colon: `AA:BB:CC:DD:EE:FF`
+- Four output formats, each with one-click copy and a "Copied" confirmation:
   - Plain: `AABBCCDDEEFF`
+  - Colon: `AA:BB:CC:DD:EE:FF`
   - Cisco-dot: `AABB.CCDD.EEFF`
+  - Hyphen: `AA-BB-CC-DD-EE-FF`
 - Vendor name resolved by longest-prefix match (MA-L / MA-M / MA-S).
 - Clear states for the three non-happy paths: **Invalid** (`Not a valid MAC
   address`), **Not found** (`Unknown vendor`, with the queried /24 prefix), and
@@ -71,7 +72,7 @@ npm run build
 4. Click the OUI Scout toolbar icon to open the popup.
 
 Paste a MAC (for example `aabb.ccdd.eeff`, `AA:BB:CC:DD:EE:FF`, or
-`AABBCCDDEEFF`) and the three formats plus the vendor appear instantly.
+`AABBCCDDEEFF`) and the four formats plus the vendor appear instantly.
 
 To pick up a new build after changing code, run `npm run build` again and click
 the **reload** (↻) button on the extension card in `chrome://extensions`.
@@ -177,13 +178,13 @@ tests/                     Privacy guard + build-script tests
 
 ## Versioning
 
-- Bump the extension version in **`manifest.json`** only (currently `0.0.10`).
-  The **rightmost** segment increments once per story/release (`0.0.9` →
-  `0.0.10`) — start low, leave room to grow, per the Chrome Web Store "prepare"
+- Bump the extension version in **`manifest.json`** only (currently `0.0.11`).
+  The **rightmost** segment increments once per story/release (`0.0.10` →
+  `0.0.11`) — start low, leave room to grow, per the Chrome Web Store "prepare"
   guidance. (Earlier history used the middle segment — `0.1.0` … `0.9.0` —
   renumbered to `0.0.9` on 2026-10-14.)
 - `package.json`'s `version` is the private npm package version and is not bumped.
 
 ## Status
 
-Published on the Chrome Web Store (version 0.0.10).
+Published on the Chrome Web Store (version 0.0.11).

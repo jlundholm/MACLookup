@@ -17,8 +17,8 @@ export type PopupState = {
   dataStatus: DataStatus;
 };
 
-export type Formats = { colon: string; plain: string; cisco: string };
+export type Formats = { plain: string; colon: string; cisco: string; hyphen: string };
 
-export type FormatKey = 'colon' | 'plain' | 'cisco';
+export type FormatKey = 'plain' | 'colon' | 'cisco' | 'hyphen';
 export type CopyFlag = 'idle' | 'copied' | 'failed';
-export type CopyState = { colon: CopyFlag; plain: CopyFlag; cisco: CopyFlag };
+export type CopyState = { plain: CopyFlag; colon: CopyFlag; cisco: CopyFlag; hyphen: CopyFlag };

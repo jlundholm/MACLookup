@@ -4,8 +4,8 @@
      dashboard privacy-policy field (Jared: publish this file, e.g. via a public
      GitHub repo or gist, and paste that URL). -->
 
-**Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and
-identifies the hardware vendor from a bundled IEEE OUI database — entirely
+**Converts pasted MAC addresses into Plain, Colon, Cisco-dot, and Hyphen formats
+and identifies the hardware vendor from a bundled IEEE OUI database — entirely
 offline, with no network access and no data collection.**
 
 That is OUI Scout's only purpose.

@@ -11,23 +11,23 @@ verbatim. Dashboard field limits: title ~45 chars, summary ≤ 132 chars.
 OUI Scout — MAC Vendor Lookup
 ```
 
-### Summary (132 chars)
+### Summary (131 chars)
 
 ```
-Convert any MAC address to Colon, Plain, and Cisco-dot formats and look up its vendor — offline. No permissions, no data collection.
+Convert a MAC to Plain, Colon, Cisco-dot, and Hyphen formats and identify its vendor — offline. No permissions, no data collection.
 ```
 
 ### Detailed description
 
 ```markdown
-OUI Scout turns a pasted MAC address into the three formats network engineers actually use — Colon (`AA:BB:CC:DD:EE:FF`), Plain (`AABBCCDDEEFF`), and Cisco-dot (`AABB.CCDD.EEFF`) — and identifies the hardware vendor from its OUI prefix.
+OUI Scout turns a pasted MAC address into the four formats network engineers actually use — Plain (`AABBCCDDEEFF`), Colon (`AA:BB:CC:DD:EE:FF`), Cisco-dot (`AABB.CCDD.EEFF`), and Hyphen (`AA-BB-CC-DD-EE-FF`) — and identifies the hardware vendor from its OUI prefix.
 
 Conversion and vendor lookup happen in a single paste, fully offline. The OUI database is bundled inside the extension, so there are no network requests, no host permissions, and no third-party services. A MAC address never leaves your machine.
 
 ## What it does
 
 - Paste any common MAC shape — colon, hyphen, dotted, space-grouped, or bare hex — and it is normalized instantly.
-- Shows all three output formats at once, each with one-click copy.
+- Shows all four output formats at once, each with one-click copy.
 - Resolves the hardware vendor by longest-prefix match against the bundled IEEE MA-L / MA-M / MA-S registries.
 - Shows a clear "Unknown vendor" state when a prefix is not in the database, and a clear error when the input is not a valid MAC address.
 - Follows your system light or dark appearance automatically. Keyboard accessible and screen-reader friendly.
@@ -60,8 +60,8 @@ Reuse `public/icons/icon-128.png` (already 128×128).
 At least one 1280×800 screenshot is required (up to 5 allowed). Capture steps:
 
 1. `npm run build` — never `npm run dev` (CRXJS dev augments `dist/` with a service worker; the screenshots must show the shipped artifact).
-2. Load `dist/` unpacked in `chrome://extensions` (Developer mode → Load unpacked). Confirm the card shows version **0.0.10**.
-3. Open the popup and paste `f0:18:98:00:00:00` — the banner shows **Found / Apple, Inc.** and all three format rows fill.
+2. Load `dist/` unpacked in `chrome://extensions` (Developer mode → Load unpacked). Confirm the card shows version **0.0.11**.
+3. Open the popup and paste `f0:18:98:00:00:00` — the banner shows **Found / Apple, Inc.** and all four format rows fill.
 4. Capture the popup window in light mode. Switch the OS to dark mode (the popup follows live) and capture again.
 5. Center each capture on a neutral flat canvas at **1280×800 px** — light-gray field for the light shot, dark-gray for the dark shot. No fake browser chrome, no marketing text, no callout arrows.
 6. Save each capture as `store/screenshots/<theme>-1280x800_<state>.png` and commit them — the committed set is `light-1280x800_valid.png`, `dark-1280x800_valid.png`, `light-1280x800_unknown.png`, and `dark-1280x800_invalid.png`.
@@ -86,7 +86,7 @@ Optional assets skipped (not required): 440×280 small promo tile, 1400×560 mar
 
 | Field | Value |
 |---|---|
-| Single-purpose statement | `Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection.` |
+| Single-purpose statement | `Converts pasted MAC addresses into Plain, Colon, Cisco-dot, and Hyphen formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection.` |
 | Remote code? | **No** (no remote code exists; enforced by `tests/privacy.guard.test.ts`) |
 | Data collection | **No data is collected** — leave every collection category unchecked |
 | Privacy policy URL | public URL of `store/privacy-policy.md` (e.g. a GitHub repo/gist link — Jared provides after publishing the file) |
@@ -99,7 +99,7 @@ Public vs. unlisted during review is Jared's call (unlisted-during-review is the
 
 ### Package
 
-Upload `release/oui-scout-0.0.10.zip`. If missing: `npm run build && npm run zip`, then confirm with `unzip -l release/oui-scout-0.0.10.zip` that `manifest.json` is at the archive root.
+Upload `release/oui-scout-0.0.11.zip`. If missing: `npm run build && npm run zip`, then confirm with `unzip -l release/oui-scout-0.0.11.zip` that `manifest.json` is at the archive root.
 
 ## Claims discipline
 

@@ -80,5 +80,5 @@ development_status:
 
   # Epic 4: Match the hyphen shape Zoom Phone and Windows tools display (FR9 — scope reversal 2026-10-16)
   epic-4: in-progress
-  4-1-add-the-hyphen-format-with-one-click-copy: ready-for-dev
+  4-1-add-the-hyphen-format-with-one-click-copy: review
   epic-4-retrospective: optional

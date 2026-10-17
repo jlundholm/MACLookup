@@ -4,7 +4,7 @@ import { lookupVendor, type OuiIndex } from '../lib/lookup';
 
 export const COPY_CONFIRM_MS = 1500;
 
-export const IDLE_COPY: CopyState = { colon: 'idle', plain: 'idle', cisco: 'idle' };
+export const IDLE_COPY: CopyState = { plain: 'idle', colon: 'idle', cisco: 'idle', hyphen: 'idle' };
 
 export const initialState: PopupState = {
   raw: '',

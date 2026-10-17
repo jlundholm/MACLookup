@@ -20,20 +20,25 @@ function fixture(): HTMLElement {
         <span class="prefix" id="banner-prefix" aria-hidden="true"></span>
       </div>
       <div class="format-rows" id="format-rows" hidden>
-        <div class="format-row" data-format="colon">
-          <span class="field-label">Colon</span>
-          <span class="readout"></span>
-          <button class="copy-button" type="button" data-format="colon">Copy</button>
-        </div>
         <div class="format-row" data-format="plain">
           <span class="field-label">Plain</span>
           <span class="readout"></span>
           <button class="copy-button" type="button" data-format="plain">Copy</button>
         </div>
+        <div class="format-row" data-format="colon">
+          <span class="field-label">Colon</span>
+          <span class="readout"></span>
+          <button class="copy-button" type="button" data-format="colon">Copy</button>
+        </div>
         <div class="format-row" data-format="cisco">
           <span class="field-label">Cisco-dot</span>
           <span class="readout"></span>
           <button class="copy-button" type="button" data-format="cisco">Copy</button>
+        </div>
+        <div class="format-row" data-format="hyphen">
+          <span class="field-label">Hyphen</span>
+          <span class="readout"></span>
+          <button class="copy-button" type="button" data-format="hyphen">Copy</button>
         </div>
       </div>
     </main>
@@ -146,13 +151,14 @@ describe('render', () => {
     expect(el<HTMLElement>(root, '#banner-value').textContent).toBe('');
   });
 
-  it('fills all three rows in order on found', () => {
+  it('fills all four rows in order on found', () => {
     render(root, FOUND);
     const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
     expect(readouts.map((r) => r.textContent)).toEqual([
-      'AA:BB:CC:DD:EE:FF',
       'AABBCCDDEEFF',
+      'AA:BB:CC:DD:EE:FF',
       'AABB.CCDD.EEFF',
+      'AA-BB-CC-DD-EE-FF',
     ]);
   });
 
@@ -170,10 +176,10 @@ describe('render', () => {
     for (const r of readouts) expect(r.textContent).toBe('—');
   });
 
-  it('found + idle flags: three enabled "Copy" buttons with no data-copy', () => {
+  it('found + idle flags: four enabled "Copy" buttons with no data-copy', () => {
     render(root, FOUND);
     const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
-    expect(btns).toHaveLength(3);
+    expect(btns).toHaveLength(4);
     for (const btn of btns) {
       expect(btn.textContent).toBe('Copy');
       expect(btn.disabled).toBe(false);
@@ -182,7 +188,7 @@ describe('render', () => {
   });
 
   it('found + copied flag: only that row shows "Copied" with data-copy', () => {
-    const state: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+    const state: PopupState = { ...FOUND, copy: { plain: 'idle', colon: 'copied', cisco: 'idle', hyphen: 'idle' } };
     render(root, state);
     const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
     const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
@@ -197,7 +203,7 @@ describe('render', () => {
   });
 
   it('found + failed flag: label stays "Copy" and data-copy="failed"', () => {
-    const state: PopupState = { ...FOUND, copy: { colon: 'idle', plain: 'failed', cisco: 'idle' } };
+    const state: PopupState = { ...FOUND, copy: { plain: 'failed', colon: 'idle', cisco: 'idle', hyphen: 'idle' } };
     render(root, state);
     const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
     expect(plain.textContent).toBe('Copy');
@@ -208,7 +214,7 @@ describe('render', () => {
   it('invalid: all copy buttons are disabled with "Copy"', () => {
     render(root, INVALID);
     const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
-    expect(btns).toHaveLength(3);
+    expect(btns).toHaveLength(4);
     for (const btn of btns) {
       expect(btn.textContent).toBe('Copy');
       expect(btn.disabled).toBe(true);
@@ -217,7 +223,7 @@ describe('render', () => {
   });
 
   it('a copied confirmation does not survive an edit (label returns to "Copy")', () => {
-    const copied: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'copied', cisco: 'copied' } };
+    const copied: PopupState = { ...FOUND, copy: { plain: 'copied', colon: 'copied', cisco: 'copied', hyphen: 'copied' } };
     render(root, copied);
     render(root, INVALID);
     for (const btn of Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'))) {
@@ -226,7 +232,7 @@ describe('render', () => {
   });
 
   it('re-rendering an unchanged copied state keeps "Copied" (idempotent)', () => {
-    const copied: PopupState = { ...FOUND, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+    const copied: PopupState = { ...FOUND, copy: { plain: 'idle', colon: 'copied', cisco: 'idle', hyphen: 'idle' } };
     render(root, copied);
     render(root, copied);
     expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').textContent).toBe('Copied');
@@ -238,7 +244,7 @@ describe('render', () => {
     document.body.innerHTML = `
       <main id="popup">
         <div class="format-rows" id="format-rows">
-          <div class="format-row" data-format="hyphen"><span class="readout"></span></div>
+          <div class="format-row" data-format="eui64"><span class="readout"></span></div>
         </div>
       </main>
     `;
@@ -268,9 +274,9 @@ describe('render', () => {
     const host = document.createElement('div');
     host.innerHTML = html;
     const rows = Array.from(host.querySelectorAll<HTMLElement>('.format-row'));
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
     for (const row of rows) {
-      expect(['colon', 'plain', 'cisco']).toContain(row.dataset.format);
+      expect(['plain', 'colon', 'cisco', 'hyphen']).toContain(row.dataset.format);
       expect(row.querySelector('.field-label')).not.toBeNull();
       expect(row.querySelector('.readout')).not.toBeNull();
       const btn = row.querySelector<HTMLButtonElement>('button.copy-button[data-format]');
@@ -306,7 +312,7 @@ describe('render', () => {
 
     expect(host.querySelector('[tabindex]')).toBeNull();
     const btns = Array.from(host.querySelectorAll<HTMLButtonElement>('button.copy-button[data-format]'));
-    expect(btns.map((b) => b.dataset.format)).toEqual(['colon', 'plain', 'cisco']);
+    expect(btns.map((b) => b.dataset.format)).toEqual(['plain', 'colon', 'cisco', 'hyphen']);
     for (const btn of btns) {
       expect(btn.hasAttribute('aria-label')).toBe(false);
       expect(btn.hasAttribute('aria-labelledby')).toBe(false);
@@ -364,24 +370,25 @@ describe('render', () => {
       ).toBe('Not found, Unknown vendor');
     });
 
-    it('leaves all three copy buttons enabled with working readouts on miss', () => {
+    it('leaves all four copy buttons enabled with working readouts on miss', () => {
       render(root, MISS);
       const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('button.copy-button'));
-      expect(btns).toHaveLength(3);
+      expect(btns).toHaveLength(4);
       for (const btn of btns) {
         expect(btn.disabled).toBe(false);
         expect(btn.textContent).toBe('Copy');
       }
       const readouts = Array.from(root.querySelectorAll<HTMLElement>('.format-row .readout'));
       expect(readouts.map((r) => r.textContent)).toEqual([
-        '99:88:77:66:55:44',
         '998877665544',
+        '99:88:77:66:55:44',
         '9988.7766.5544',
+        '99-88-77-66-55-44',
       ]);
     });
 
     it('shows the Copied confirmation on a miss, not only on a found', () => {
-      const state: PopupState = { ...MISS, copy: { colon: 'copied', plain: 'idle', cisco: 'idle' } };
+      const state: PopupState = { ...MISS, copy: { plain: 'idle', colon: 'copied', cisco: 'idle', hyphen: 'idle' } };
       render(root, state);
       const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
       const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');

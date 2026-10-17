@@ -257,7 +257,7 @@ describe('nextState', () => {
         outcome: 'copied',
       });
       const ready = nextState(copied, { type: 'dataset-ready' }, FIXTURE);
-      expect(ready.copy).toEqual({ colon: 'copied', plain: 'idle', cisco: 'idle' });
+      expect(ready.copy).toEqual({ colon: 'copied', plain: 'idle', cisco: 'idle', hyphen: 'idle' });
     });
   });
 
@@ -272,7 +272,7 @@ describe('nextState', () => {
         canonical: CANON,
         outcome: 'copied',
       });
-      expect(resolved.copy).toEqual({ colon: 'idle', plain: 'idle', cisco: 'copied' });
+      expect(resolved.copy).toEqual({ colon: 'idle', plain: 'idle', cisco: 'copied', hyphen: 'idle' });
       expect(resolved).not.toBe(valid);
     });
 
@@ -284,7 +284,27 @@ describe('nextState', () => {
         canonical: CANON,
         outcome: 'failed',
       });
-      expect(resolved.copy).toEqual({ colon: 'idle', plain: 'failed', cisco: 'idle' });
+      expect(resolved.copy).toEqual({ colon: 'idle', plain: 'failed', cisco: 'idle', hyphen: 'idle' });
+    });
+
+    it('copy-resolved tracks the hyphen flag independently', () => {
+      const valid = inputFrom(initialState, CANON);
+      const resolved = nextState(valid, {
+        type: 'copy-resolved',
+        format: 'hyphen',
+        canonical: CANON,
+        outcome: 'copied',
+      });
+      expect(resolved.copy).toEqual({ plain: 'idle', colon: 'idle', cisco: 'idle', hyphen: 'copied' });
+      const failed = nextState(valid, {
+        type: 'copy-resolved',
+        format: 'hyphen',
+        canonical: CANON,
+        outcome: 'failed',
+      });
+      expect(failed.copy).toEqual({ plain: 'idle', colon: 'idle', cisco: 'idle', hyphen: 'failed' });
+      const timedOut = nextState(failed, { type: 'copy-timeout', format: 'hyphen' });
+      expect(timedOut.copy).toEqual(IDLE_COPY);
     });
 
     it('copy-resolved is ignored when the canonical changed (stale write)', () => {
@@ -326,7 +346,7 @@ describe('nextState', () => {
         canonical: raw,
         outcome: 'copied',
       });
-      expect(resolved.copy).toEqual({ colon: 'copied', plain: 'idle', cisco: 'idle' });
+      expect(resolved.copy).toEqual({ colon: 'copied', plain: 'idle', cisco: 'idle', hyphen: 'idle' });
       expect(resolved).not.toBe(state);
     });
 
@@ -345,7 +365,7 @@ describe('nextState', () => {
         outcome: 'failed',
       });
       const timedOut = nextState(failed, { type: 'copy-timeout', format: 'colon' });
-      expect(timedOut.copy).toEqual({ colon: 'idle', plain: 'failed', cisco: 'idle' });
+      expect(timedOut.copy).toEqual({ colon: 'idle', plain: 'failed', cisco: 'idle', hyphen: 'idle' });
     });
 
     it('copy-timeout on an already-idle format is a no-op', () => {
