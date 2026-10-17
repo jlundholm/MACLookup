@@ -187,7 +187,10 @@ tests/                     Privacy guard + build-script tests
 
 ## Status
 
-Published on the Chrome Web Store (version 0.0.10).
+Published on the Chrome Web Store (version 0.0.10). Version 0.0.11 is
+submitted and pending review.
 
-<!-- Story 3.2 owns this line: bump to 0.0.11 only once the 0.0.11 build is
-     actually submitted (Story 4.1 review: the blind bump was a false claim). -->
+<!-- Story 3.2 owns this line: on CWS approval of 0.0.11, change the first
+     sentence to "Published on the Chrome Web Store (version 0.0.11)." and
+     drop the pending-review sentence. (Story 4.1 review: a blind bump to a
+     not-yet-approved version was a false claim.) -->

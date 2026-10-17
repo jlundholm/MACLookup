@@ -4,7 +4,7 @@ baseline_commit: 81d5e4acfa31fa89b321f0f0acb31ed8bd28afd1
 
 # Story 4.1: Add the Hyphen format with one-click copy
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -63,7 +63,7 @@ so that I can paste the exact shape Zoom Phone displays without reformatting by 
   - [x] `npm run typecheck` → 0 errors (the closed `CopyState`/`Formats` types sweep every stale literal — fix all reported sites).
   - [x] `npm test` → full suite green, including the untouched `tests/privacy.guard.test.ts`.
   - [x] `npm run build` → production build succeeds.
-  - [ ] Manual check (`npm run dev` or load `dist/` unpacked): paste `f0:18:98:00:00:00`, confirm four rows in the order Plain, Colon, Cisco-dot, Hyphen, Hyphen reads `F0-18-98-00-00-00`, its Copy writes the exact hyphen string, "Copied" reverts after ~1.5 s, invalid input dashes/disables all four rows, and the popup still fits with no clipping (the shell is fixed 360px wide with `overflow: hidden`; one extra ~46px row keeps total height far under Chrome's 800×600 ceiling). *(Structural half verified: 4 rows in order + version 0.0.11 confirmed in built `dist/`; live GUI pass pending Jared — see Completion Notes.)*
+  - [x] Manual check (`npm run dev` or load `dist/` unpacked): paste `f0:18:98:00:00:00`, confirm four rows in the order Plain, Colon, Cisco-dot, Hyphen, Hyphen reads `F0-18-98-00-00-00`, its Copy writes the exact hyphen string, "Copied" reverts after ~1.5 s, invalid input dashes/disables all four rows, and the popup still fits with no clipping (the shell is fixed 360px wide with `overflow: hidden`; one extra ~46px row keeps total height far under Chrome's 800×600 ceiling). PASSED 2026-10-16 (Jared): all four format rows render and copy correctly.
 
 ### Review Findings
 
@@ -160,4 +160,5 @@ opencode/mimo-v2.6-flash-free
 
 - 2026-10-16: Implemented Story 4.1 — Hyphen output format added with per-row copy; rows reordered to Plain, Colon, Cisco-dot, Hyphen; version bumped to 0.0.11; docs updated. Typecheck + 266 tests + build all green.
 - 2026-10-16: Addressed code review findings — 4 patches applied (1. manual-check subtask un-checked (never performed); 2. README publish line restored to 0.0.10 with an ownership note for Story 3.2; 3. copy-exclusivity test gap closed — hyphen row added to exclusivity/idempotency assertions plus two new hyphen copied/failed render tests, suite now 268; 4. project-context.md key contracts refreshed to the four-key shape). 1 defer logged (pre-existing prototype-key fallback hole in render.ts, deferred-work.md). Gates re-run: typecheck 0 errors, 268/268 tests, build green.
+- 2026-10-16: Manual GUI check PASSED (Jared): all four format rows (Plain, Colon, Cisco-dot, Hyphen) render and copy correctly. Story 4.1 complete; `release/oui-scout-0.0.11.zip` submitted to the Chrome Web Store, pending review.
 

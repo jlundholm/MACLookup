@@ -4,7 +4,7 @@ baseline_commit: 6c31add4b7e75854262a5ed85274bd9b8a53d1c8
 
 # Story 3.2: Publish a store listing and privacy policy with a "no data collection" disclosure
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -62,9 +62,9 @@ so that publication meets Chrome Web Store requirements without weakening the pr
   - [x] Do **not** add promo tiles (440×280 / 1400×560) or a YouTube link — optional in the dashboard; out of scope here.
 - [x] Task 4: Walk Jared through the developer-dashboard entry (human step — prepare, don't fake) (AC: 1, 3, 4)
   - [x] Produce a short dashboard checklist inside `store/listing.md` (a "Dashboard entry order" section) covering, in order: Store listing tab (icon — reuse `public/icons/icon-128.png`, already 128×128; title; summary; detailed description; category Tools; language English; both screenshots); Privacy practices tab (single-purpose statement — verbatim the sentence below; remote code **No**; data collection **No data collected** / none of the category checkboxes; privacy policy URL — the public URL of `store/privacy-policy.md`); Distribution tab (public visibility is Jared's call; unlisted-during-review is the default).
-  - [x] The **single-purpose statement** (use this exact wording, also reused in Task 2's policy): "Converts pasted MAC addresses into Colon, Plain, and Cisco-dot formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection."
+  - [x] The **single-purpose statement** (use this exact wording, also reused in Task 2's policy): "Converts pasted MAC addresses into Plain, Colon, Cisco-dot, and Hyphen formats and identifies the hardware vendor from a bundled IEEE OUI database — entirely offline, with no network access and no data collection." (Wording updated to the four-format order for Story 4.1's Hyphen row; both `store/` docs already carry it.)
   - [x] The remote-code answer is **No** and must never be marked Yes: the extension ships no remote code, no eval; the Story 1.8 guard suite enforces this and Story 3.3 re-verifies on the final build (AC4).
-  - [x] Upload `release/oui-scout-0.0.10.zip` (the artifact Story 3.1 produced and Jared already load-tested). If the zip is missing, rebuild with `npm run build && npm run zip` and re-verify with `unzip -l` (manifest.json at archive root).
+  - [x] Upload `release/oui-scout-0.0.10.zip` (the artifact Story 3.1 produced and Jared already load-tested). If the zip is missing, rebuild with `npm run build && npm run zip` and re-verify with `unzip -l` (manifest.json at archive root). *(Post-review update 2026-10-16: the submitted build is Story 4.1's `release/oui-scout-0.0.11.zip` — 0.0.11 submitted, pending review.)*
 - [x] Task 5: Housekeeping and gates (AC: 1; all)
   - [x] `.gitignore`: ensure `store/screenshots/*.png` is **NOT** ignored — screenshots are committed listing source assets (like `public/icons/`), not build output. Conversely, do not un-ignore `dist/` or `release/`.
   - [x] `README.md`: update the **Status** section (currently "Private, unpublished v1. Not yet submitted to the Chrome Web Store.") to reflect reality after Jared submits — e.g., "Submitted to the Chrome Web Store (version 0.0.10), pending review." Only change this line once Jared has actually submitted; if the story halts before submission, leave it.
