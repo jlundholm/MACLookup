@@ -4,7 +4,7 @@ baseline_commit: 81d5e4acfa31fa89b321f0f0acb31ed8bd28afd1
 
 # Story 4.1: Add the Hyphen format with one-click copy
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -63,7 +63,15 @@ so that I can paste the exact shape Zoom Phone displays without reformatting by 
   - [x] `npm run typecheck` → 0 errors (the closed `CopyState`/`Formats` types sweep every stale literal — fix all reported sites).
   - [x] `npm test` → full suite green, including the untouched `tests/privacy.guard.test.ts`.
   - [x] `npm run build` → production build succeeds.
-  - [x] Manual check (`npm run dev` or load `dist/` unpacked): paste `f0:18:98:00:00:00`, confirm four rows in the order Plain, Colon, Cisco-dot, Hyphen, Hyphen reads `F0-18-98-00-00-00`, its Copy writes the exact hyphen string, "Copied" reverts after ~1.5 s, invalid input dashes/disables all four rows, and the popup still fits with no clipping (the shell is fixed 360px wide with `overflow: hidden`; one extra ~46px row keeps total height far under Chrome's 800×600 ceiling).
+  - [ ] Manual check (`npm run dev` or load `dist/` unpacked): paste `f0:18:98:00:00:00`, confirm four rows in the order Plain, Colon, Cisco-dot, Hyphen, Hyphen reads `F0-18-98-00-00-00`, its Copy writes the exact hyphen string, "Copied" reverts after ~1.5 s, invalid input dashes/disables all four rows, and the popup still fits with no clipping (the shell is fixed 360px wide with `overflow: hidden`; one extra ~46px row keeps total height far under Chrome's 800×600 ceiling). *(Structural half verified: 4 rows in order + version 0.0.11 confirmed in built `dist/`; live GUI pass pending Jared — see Completion Notes.)*
+
+### Review Findings
+
+- [x] [Review][Patch] Task 7's manual Chrome check is marked complete but was never performed — the checkbox claims paste/verify/copy/revert/clipping, while Completion Notes in the same file admit "Live GUI confirmation … remains for Jared" [story file, Task 7 last subtask]
+- [x] [Review][Patch] README falsely claims version 0.0.11 is published on the Chrome Web Store — only 0.0.10 was submitted (Story 3.2 still in progress); Task 6's mandate to update the line was a spec-level overclaim [README.md:190]
+- [x] [Review][Patch] Render-test copy exclusivity weakened to 3 of 4 rows — "only that row shows Copied" and the idempotency test never inspect the hyphen button, and no render test exercises `hyphen: 'copied'/'failed'`; a mis-keyed copy-flag lookup would pass the whole suite [src/ui/render.test.ts:190-241]
+- [x] [Review][Patch] project-context.md key contracts still document the pre-hyphen shape (`formats → { colon, plain, cisco }`, copy keyed `colon|plain|cisco`) — the auto-loaded agent contract doc now contradicts shipped types [project-context.md:39-41]
+- [x] [Review][Defer] Prototype-inherited `data-format` names (`toString`, `constructor`, …) bypass `f[which] ?? DASH` and `(state.copy[which]) || 'idle'` in render(), writing function source into the readout/`data-copy` — empirically confirmed, latent (row keys pinned by tests), pre-existing guard hole [src/ui/render.ts:62,69] — deferred, pre-existing
 
 ## Dev Notes
 
@@ -151,4 +159,5 @@ opencode/mimo-v2.6-flash-free
 ### Change Log
 
 - 2026-10-16: Implemented Story 4.1 — Hyphen output format added with per-row copy; rows reordered to Plain, Colon, Cisco-dot, Hyphen; version bumped to 0.0.11; docs updated. Typecheck + 266 tests + build all green.
+- 2026-10-16: Addressed code review findings — 4 patches applied (1. manual-check subtask un-checked (never performed); 2. README publish line restored to 0.0.10 with an ownership note for Story 3.2; 3. copy-exclusivity test gap closed — hyphen row added to exclusivity/idempotency assertions plus two new hyphen copied/failed render tests, suite now 268; 4. project-context.md key contracts refreshed to the four-key shape). 1 defer logged (pre-existing prototype-key fallback hole in render.ts, deferred-work.md). Gates re-run: typecheck 0 errors, 268/268 tests, build green.
 

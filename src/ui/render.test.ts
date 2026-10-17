@@ -193,13 +193,40 @@ describe('render', () => {
     const colon = el<HTMLButtonElement>(root, 'button[data-format="colon"]');
     const plain = el<HTMLButtonElement>(root, 'button[data-format="plain"]');
     const cisco = el<HTMLButtonElement>(root, 'button[data-format="cisco"]');
+    const hyphen = el<HTMLButtonElement>(root, 'button[data-format="hyphen"]');
     expect(colon.textContent).toBe('Copied');
     expect(colon.dataset.copy).toBe('copied');
-    expect(plain.textContent).toBe('Copy');
-    expect(plain.hasAttribute('data-copy')).toBe(false);
-    expect(cisco.textContent).toBe('Copy');
-    expect(cisco.hasAttribute('data-copy')).toBe(false);
-    for (const btn of [colon, plain, cisco]) expect(btn.disabled).toBe(false);
+    for (const other of [plain, cisco, hyphen]) {
+      expect(other.textContent).toBe('Copy');
+      expect(other.hasAttribute('data-copy')).toBe(false);
+    }
+    for (const btn of [colon, plain, cisco, hyphen]) expect(btn.disabled).toBe(false);
+  });
+
+  it('found + hyphen copied flag: only the hyphen row shows "Copied"', () => {
+    const state: PopupState = { ...FOUND, copy: { plain: 'idle', colon: 'idle', cisco: 'idle', hyphen: 'copied' } };
+    render(root, state);
+    const hyphen = el<HTMLButtonElement>(root, 'button[data-format="hyphen"]');
+    expect(hyphen.textContent).toBe('Copied');
+    expect(hyphen.dataset.copy).toBe('copied');
+    expect(hyphen.disabled).toBe(false);
+    for (const format of ['plain', 'colon', 'cisco']) {
+      const btn = el<HTMLButtonElement>(root, `button[data-format="${format}"]`);
+      expect(btn.textContent).toBe('Copy');
+      expect(btn.hasAttribute('data-copy')).toBe(false);
+    }
+  });
+
+  it('found + hyphen failed flag: label stays "Copy" and data-copy="failed"', () => {
+    const state: PopupState = { ...FOUND, copy: { plain: 'idle', colon: 'idle', cisco: 'idle', hyphen: 'failed' } };
+    render(root, state);
+    const hyphen = el<HTMLButtonElement>(root, 'button[data-format="hyphen"]');
+    expect(hyphen.textContent).toBe('Copy');
+    expect(hyphen.dataset.copy).toBe('failed');
+    expect(hyphen.disabled).toBe(false);
+    for (const format of ['plain', 'colon', 'cisco']) {
+      expect(el<HTMLButtonElement>(root, `button[data-format="${format}"]`).hasAttribute('data-copy')).toBe(false);
+    }
   });
 
   it('found + failed flag: label stays "Copy" and data-copy="failed"', () => {
@@ -238,6 +265,8 @@ describe('render', () => {
     expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').textContent).toBe('Copied');
     expect(el<HTMLButtonElement>(root, 'button[data-format="colon"]').dataset.copy).toBe('copied');
     expect(el<HTMLButtonElement>(root, 'button[data-format="plain"]').textContent).toBe('Copy');
+    expect(el<HTMLButtonElement>(root, 'button[data-format="hyphen"]').textContent).toBe('Copy');
+    expect(el<HTMLButtonElement>(root, 'button[data-format="hyphen"]').hasAttribute('data-copy')).toBe(false);
   });
 
   it('writes a dash for a row whose data-format is not a Formats key', () => {

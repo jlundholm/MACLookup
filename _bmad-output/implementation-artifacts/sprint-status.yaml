@@ -45,7 +45,7 @@
 
 generated: 2026-10-10
 last_updated: 2026-10-16
-# history: 1-2 done 2026-10-10; 1-3 done 2026-10-10; 1-4 done 2026-10-10 (2 review patches applied); 1-5 done 2026-10-10 (5 review patches applied; 1 deferred to 2.3); 1-6 done 2026-10-10 (6 review patches applied; 1 deferred); 1-7 done 2026-10-11 (4 review patches applied; 1 deferred); 1-8 done 2026-10-11 (3 review patches applied; 3 deferred); 2-1 done 2026-10-11 (8 review patches applied; 5 deferred); 2-2 done 2026-10-11; 2-3 done 2026-10-11 (1 deferred); 3-1 done 2026-10-16 (review: 11 patches applied, 1 deferred); 4-1 story created 2026-10-16 (new Epic 4 — hyphen format scope reversal, FR9)
+# history: 1-2 done 2026-10-10; 1-3 done 2026-10-10; 1-4 done 2026-10-10 (2 review patches applied); 1-5 done 2026-10-10 (5 review patches applied; 1 deferred to 2.3); 1-6 done 2026-10-10 (6 review patches applied; 1 deferred); 1-7 done 2026-10-11 (4 review patches applied; 1 deferred); 1-8 done 2026-10-11 (3 review patches applied; 3 deferred); 2-1 done 2026-10-11 (8 review patches applied; 5 deferred); 2-2 done 2026-10-11; 2-3 done 2026-10-11 (1 deferred); 3-1 done 2026-10-16 (review: 11 patches applied, 1 deferred); 4-1 story created 2026-10-16 (new Epic 4 — hyphen format scope reversal, FR9); 4-1 dev + review 2026-10-16 (4 review patches applied; 1 deferred; in-progress pending Jared's manual GUI check)
 project: Mac Lookup
 project_key: NOKEY
 tracking_system: file-system
@@ -80,5 +80,5 @@ development_status:
 
   # Epic 4: Match the hyphen shape Zoom Phone and Windows tools display (FR9 — scope reversal 2026-10-16)
   epic-4: in-progress
-  4-1-add-the-hyphen-format-with-one-click-copy: review
+  4-1-add-the-hyphen-format-with-one-click-copy: done
   epic-4-retrospective: optional

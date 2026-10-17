@@ -1,5 +1,9 @@
 # Deferred Work
 
+## Deferred from: code review of 4-1-add-the-hyphen-format-with-one-click-copy (2026-10-16)
+
+- **Prototype-inherited `data-format` names bypass the unknown-key fallback in `render()`:** a row whose `data-format` is an `Object.prototype` name (`toString`, `constructor`, `valueOf`, …) makes `f[which] ?? DASH` (src/ui/render.ts:62) evaluate to a truthy function, so the readout shows the function source instead of `—`, and `state.copy[which]` (src/ui/render.ts:69) writes the function source into `data-copy` (also flipping the CSS `[data-copy]` hover exclusion). The `Object.hasOwn(state.copy, which)` guard in src/main.ts:50 protects the click path only; `render()` has no equivalent. Empirically confirmed against the current tree. Latent in the shipped popup — the four row keys are pinned by src/ui/render.test.ts:315 and no `FormatKey` collides with a prototype name — but it is the very fallback contract Story 4.1's `eui64` fixture relies on. Pre-existing (the guard predates Story 4.1); proper fix is an `Object.hasOwn(f, which)` / `Object.hasOwn(state.copy, which)` guard in `render()` plus a prototype-name fixture.
+
 > **Resolved by Story 2.3 (vendor banner):** the Story 1.1 **banner**
 > live-region note — re-scoped to 2.3 by Story 1.7 — is discharged. 2.3 makes
 > `#result-banner` the single content-driven live region the note asked for:

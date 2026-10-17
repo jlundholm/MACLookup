@@ -187,4 +187,7 @@ tests/                     Privacy guard + build-script tests
 
 ## Status
 
-Published on the Chrome Web Store (version 0.0.11).
+Published on the Chrome Web Store (version 0.0.10).
+
+<!-- Story 3.2 owns this line: bump to 0.0.11 only once the 0.0.11 build is
+     actually submitted (Story 4.1 review: the blind bump was a false claim). -->
